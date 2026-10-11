@@ -1,0 +1,2526 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<title id="pageTitle">手机警报器</title>
+<style>
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent;user-select:none}
+body{
+  margin:0;
+  padding:env(safe-area-inset-top, 6px) 6px env(safe-area-inset-bottom, 6px);
+  background:#060709;
+  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
+  min-height:100vh;
+  min-height:100dvh;
+  display:flex;
+  justify-content:center;
+  align-items:center;
+}
+.console{
+  width:100%;
+  max-width:480px;
+  background:linear-gradient(180deg,#15181e 0%,#0e1015 100%);
+  border:1.5px solid #2a2f38;
+  border-radius:12px;
+  box-shadow:0 12px 40px rgba(0,0,0,.95),inset 0 1px 0 rgba(255,255,255,.05);
+  overflow:hidden;
+  display:flex;
+  flex-direction:column;
+}
+.lightbar{
+  background:#000;
+  border-bottom:1.5px solid #1a1d23;
+  padding:6px 8px;
+  display:flex;
+  gap:4px;
+  align-items:center;
+}
+.light-led{
+  flex:1;
+  height:12px;
+  border-radius:2px;
+  background:#14161b;
+  transition:background .03s,box-shadow .03s;
+}
+.light-led.blue.on{background:#0075ff;box-shadow:0 0 12px #0075ff,0 0 24px rgba(0,117,255,.95)}
+.light-led.amber.on{background:#ff9900;box-shadow:0 0 12px #ff9900,0 0 24px rgba(255,153,0,.95)}
+.light-led.white.on{background:#ffffff;box-shadow:0 0 14px #ffffff,0 0 28px rgba(255,255,255,1)}
+.light-led.red.on{background:#ff1e1e;box-shadow:0 0 12px #ff1e1e,0 0 24px rgba(255,30,30,.95)}
+.brand{
+  background:linear-gradient(180deg,#2b2f36,#1a1d23);
+  border-bottom:1.5px solid #0a0b0e;
+  padding:7px 10px;
+  display:flex;
+  justify-content:center;
+  align-items:center;
+}
+.brand-name{
+  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
+  font-weight:800;
+  color:#d4d8de;
+  font-size:14px;
+  letter-spacing:1px;
+  text-shadow:0 1px 0 #000;
+}
+.statusbar{
+  background:#0a0c10;
+  border-bottom:1px solid #1a1d23;
+  padding:4px 10px;
+  display:flex;
+  justify-content:flex-start;
+  align-items:center;
+  font-size:9.5px;
+  color:#525e70;
+  font-weight:700;
+  letter-spacing:.3px;
+}
+.statusbar .led{
+  width:7px;
+  height:7px;
+  border-radius:50%;
+  background:#232730;
+  display:inline-block;
+  margin-right:5px;
+  transition:all .15s;
+}
+.statusbar .led.ready{background:#00cc66;box-shadow:0 0 5px #00cc66}
+.statusbar .led.active{background:#ff9500;box-shadow:0 0 7px #ff9500}
+.content{
+  padding:8px 8px 10px;
+}
+.section-tag{
+  color:#4b5463;
+  font-size:8.5px;
+  font-weight:800;
+  margin:7px 0 4px;
+  text-transform:uppercase;
+  letter-spacing:1px;
+  border-left:2px solid #ff9500;
+  padding-left:5px;
+}
+.section-tag:first-child{margin-top:0}
+.grid-2{display:grid;grid-template-columns:1fr 1fr;gap:5px;margin-bottom:5px}
+.grid-3{display:grid;grid-template-columns:repeat(3,1fr);gap:5px;margin-bottom:5px}
+.grid-4{display:grid;grid-template-columns:repeat(4,1fr);gap:4px;margin-bottom:5px}
+.grid-5{display:grid;grid-template-columns:repeat(5,1fr);gap:4px;margin-bottom:5px}
+.btn{
+  position:relative;
+  border:none;
+  outline:none;
+  cursor:pointer;
+  border-radius:5px;
+  font-weight:800;
+  text-align:center;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+  background:linear-gradient(180deg,#252932,#181b22);
+  color:#9aa5b8;
+  box-shadow:0 3px 0 #0a0b0f,inset 0 1px 0 rgba(255,255,255,.06),0 4px 10px rgba(0,0,0,.45);
+  touch-action:none;
+  transition:transform .04s,box-shadow .04s;
+  padding:2px 4px;
+}
+.btn:active,.btn.pressed{
+  transform:translateY(2px);
+  box-shadow:0 1px 0 #0a0b0f,inset 0 1px 0 rgba(255,255,255,.04),0 1px 3px rgba(0,0,0,.6);
+}
+.btn .sub{
+  font-size:7.5px;
+  font-weight:600;
+  opacity:.65;
+  margin-top:1.5px;
+  letter-spacing:.2px;
+  white-space:nowrap;
+  overflow:hidden;
+  text-overflow:ellipsis;
+  max-width:100%;
+}
+.btn-horn{height:54px;font-size:13.5px;background:linear-gradient(180deg,#3a1a1a,#241010);color:#ff9a9a;border:1px solid #5a2424}
+.btn-horn.pressed{background:linear-gradient(180deg,#e02020,#a81515);color:#fff;box-shadow:0 1px 0 #3a0808,0 0 16px rgba(255,40,40,.6)}
+.btn-mic{height:54px;font-size:13.5px;background:linear-gradient(180deg,#1c3325,#112117);color:#73d89c;border:1px solid #2d5a3d}
+.btn-mic.pressed{background:linear-gradient(180deg,#1db954,#128038);color:#fff;box-shadow:0 1px 0 #09401c,0 0 16px rgba(29,185,84,.7)}
+.btn-manual{height:46px;font-size:12px;background:linear-gradient(180deg,#332a14,#221a0a);color:#ffd666;border:1px solid #5a4a20}
+.btn-manual.pressed{background:linear-gradient(180deg,#e0a020,#b07810);color:#000;box-shadow:0 1px 0 #3a2808,0 0 16px rgba(255,190,30,.6)}
+.btn-siren{height:44px;font-size:11.5px;background:linear-gradient(180deg,#1f2632,#131820);color:#8ea8cc;border:1px solid #2a3648}
+.btn-siren.active{background:linear-gradient(180deg,#1a4d80,#0e3258);color:#7accff;border-color:#0088ff;box-shadow:0 1px 0 #05121f,0 0 14px rgba(0,150,255,.5);transform:translateY(2px)}
+.btn-dual{height:44px;font-size:11.5px;background:linear-gradient(180deg,#28203a,#181222);color:#b8a0e0;border:1px solid #3a2c58}
+.btn-dual.active{background:linear-gradient(180deg,#5a28a0,#3a1870);color:#fff;border-color:#8040ff;box-shadow:0 1px 0 #15082b,0 0 14px rgba(140,80,255,.55);transform:translateY(2px)}
+.btn-auto{height:44px;font-size:11.5px;background:linear-gradient(180deg,#182d38,#0e1c24);color:#66d9e8;border:1px solid #1c4759}
+.btn-auto.active{background:linear-gradient(180deg,#0ca678,#087f5b);color:#fff;border-color:#20c997;box-shadow:0 1px 0 #043828,0 0 14px rgba(32,201,151,.6);transform:translateY(2px)}
+.btn-lightmode{height:38px;font-size:10.5px;background:linear-gradient(180deg,#261c16,#17100b);color:#ffaa66;border:1px solid #4a2818}
+.btn-lightmode.active{background:linear-gradient(180deg,#d9531e,#8c2e0b);color:#fff;border-color:#ff6b33;box-shadow:0 1px 0 #2b0b02,0 0 12px rgba(255,100,50,.65);transform:translateY(2px)}
+.btn-takedown{height:38px;font-size:10.5px;background:linear-gradient(180deg,#2b2d35,#181920);color:#f0f2f5;border:1px solid #4a4d5a}
+.btn-takedown.active{background:linear-gradient(180deg,#e8e8e8,#a0a2ad);color:#000;border-color:#ffffff;box-shadow:0 1px 0 #2b2b2b,0 0 14px rgba(255,255,255,.8);transform:translateY(2px)}
+.btn-howler{height:44px;font-size:11.5px;background:linear-gradient(180deg,#3a2410,#221408);color:#ffaa55;border:1px solid #5a3a18}
+.btn-howler.armed{background:linear-gradient(180deg,#8a4000,#542400);color:#ffcc88;border-color:#cc6600;box-shadow:0 0 10px rgba(204,102,0,.5)}
+.btn-howler.active{background:linear-gradient(180deg,#e07000,#a85000);color:#fff;border-color:#ff8833;box-shadow:0 1px 0 #3a1800,0 0 18px rgba(255,120,20,.85);transform:translateY(2px)}
+.btn-util{height:44px;font-size:11.5px;background:linear-gradient(180deg,#1f2632,#131820);color:#8ea8cc;border:1px solid #2a3648}
+.btn-util.active{background:linear-gradient(180deg,#2a4818,#183008);color:#9ee640;border-color:#57a810;box-shadow:0 1px 0 #070d04,0 0 12px rgba(120,220,40,.4);transform:translateY(2px)}
+.btn-stop{height:44px;font-size:11.5px;background:linear-gradient(180deg,#3a1818,#201010);color:#e65c5c;border:1px solid #4a1c1c}
+.btn-stop:active{background:linear-gradient(180deg,#c01010,#801010);color:#fff}
+.footer{
+  background:#0a0c10;
+  border-top:1px solid #1a1d23;
+  padding:6px 10px;
+  font-size:9.5px;
+  color:#616c7d;
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+}
+.footer-ver{
+  font-family:monospace;
+  color:#556073;
+  font-weight:700;
+  letter-spacing:.5px;
+}
+.footer-right{
+  display:flex;
+  align-items:center;
+  gap:6px;
+}
+.footer-free{
+  color:#ff5555;
+  font-weight:700;
+}
+.btn-contact{
+  background:#1a202c;
+  border:1px solid #2d3748;
+  color:#63b3ed;
+  border-radius:4px;
+  padding:2px 6px;
+  font-size:9px;
+  font-weight:800;
+  cursor:pointer;
+  display:inline-flex;
+  align-items:center;
+  gap:2px;
+  transition:all .1s;
+}
+.btn-contact:active{
+  background:#2b6cb0;
+  color:#fff;
+  border-color:#3182ce;
+}
+
+/* 启动免责阻断弹窗：最高优先级居顶遮罩 */
+.disclaimer-overlay{
+  position:fixed;
+  top:0;left:0;right:0;bottom:0;
+  background:rgba(0,0,0,.94);
+  backdrop-filter:blur(14px);
+  -webkit-backdrop-filter:blur(14px);
+  z-index:9999999;
+  display:flex;
+  justify-content:center;
+  align-items:center;
+  padding:16px;
+}
+.disclaimer-card{
+  width:100%;
+  max-width:380px;
+  background:linear-gradient(180deg,#15181e 0%,#0e1015 100%);
+  border:1.5px solid #2a2f38;
+  border-radius:12px;
+  padding:22px 18px 18px;
+  box-shadow:0 24px 60px rgba(0,0,0,.95), inset 0 1px 0 rgba(255,255,255,.05);
+}
+.disclaimer-body{
+  font-size:14px;
+  color:#f1f5f9;
+  line-height:1.75;
+  text-align:justify;
+  font-weight:700;
+  margin-bottom:20px;
+  letter-spacing:.3px;
+}
+.disclaimer-actions{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:10px;
+}
+.btn-disc-agree{
+  padding:10px 0;
+  font-size:12.5px;
+  font-weight:800;
+  border-radius:5px;
+  cursor:pointer;
+  background:linear-gradient(180deg,#1c3325,#112117);
+  color:#73d89c;
+  border:1px solid #2d5a3d;
+  box-shadow:0 3px 0 #0a0b0f;
+}
+.btn-disc-agree:active{
+  transform:translateY(2px);
+  background:linear-gradient(180deg,#1db954,#128038);
+  color:#fff;
+  box-shadow:0 1px 0 #09401c;
+}
+.btn-disc-refuse{
+  padding:10px 0;
+  font-size:12.5px;
+  font-weight:800;
+  border-radius:5px;
+  cursor:pointer;
+  background:linear-gradient(180deg,#3a1a1a,#241010);
+  color:#ff9a9a;
+  border:1px solid #5a2424;
+  box-shadow:0 3px 0 #0a0b0f;
+}
+.btn-disc-refuse:active{
+  transform:translateY(2px);
+  background:linear-gradient(180deg,#e02020,#a81515);
+  color:#fff;
+  box-shadow:0 1px 0 #3a0808;
+}
+
+/* 模态弹窗 */
+.modal-overlay{
+  position:fixed;
+  top:0;left:0;right:0;bottom:0;
+  background:rgba(0,0,0,.85);
+  backdrop-filter:blur(8px);
+  -webkit-backdrop-filter:blur(8px);
+  z-index:9999;
+  display:none;
+  justify-content:center;
+  align-items:center;
+  padding:16px;
+}
+.modal-overlay.open{display:flex}
+.modal-card{
+  width:100%;
+  max-width:390px;
+  background:linear-gradient(180deg,#15181e 0%,#0e1015 100%);
+  border:1.5px solid #2a2f38;
+  border-radius:12px;
+  padding:18px 16px;
+  box-shadow:0 24px 60px rgba(0,0,0,.95), inset 0 1px 0 rgba(255,255,255,.05);
+}
+.modal-header{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  border-bottom:1px solid #202632;
+  padding-bottom:10px;
+  margin-bottom:14px;
+}
+.modal-title{
+  font-size:13px;
+  font-weight:800;
+  color:#ff9500;
+  letter-spacing:.5px;
+}
+.btn-close{
+  background:none;
+  border:none;
+  color:#8a94a6;
+  font-size:18px;
+  line-height:1;
+  cursor:pointer;
+  padding:4px 8px;
+  border-radius:4px;
+}
+.btn-close:active{color:#fff;background:#1f2634}
+.lang-toggle{display:flex;gap:5px}
+.btn-lang{
+  padding:4px 10px;
+  font-size:10.5px;
+  font-weight:800;
+  border:1px solid #333a46;
+  background:#181c24;
+  color:#8a94a6;
+  border-radius:4px;
+  cursor:pointer;
+}
+.btn-lang.active{background:#ff9500;color:#000;border-color:#ff9500}
+.slider-row{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  margin-bottom:14px;
+  font-size:11.5px;
+  color:#a2acbd;
+  font-weight:700;
+}
+.slider-row:last-child{margin-bottom:0}
+.slider-row input[type=range]{
+  width:50%;
+  accent-color:#ff9500;
+  cursor:pointer;
+}
+.slider-val{
+  width:44px;
+  text-align:right;
+  color:#ffd666;
+  font-family:monospace;
+  font-size:12px;
+}
+.btn-reset-defaults{
+  width:100%;
+  margin-top:14px;
+  padding:8px 0;
+  background:linear-gradient(180deg,#2b1919,#1a0f0f);
+  border:1px solid #5a2626;
+  color:#ff8888;
+  font-size:11px;
+  font-weight:800;
+  border-radius:5px;
+  cursor:pointer;
+}
+.btn-reset-defaults:active{
+  background:#e02020;
+  color:#fff;
+  border-color:#e02020;
+}
+
+/* 联系作者面板 */
+.contact-info-row{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  background:#181c24;
+  padding:10px 12px;
+  border-radius:6px;
+  border:1px solid #2a313d;
+  margin-bottom:10px;
+}
+.contact-label{
+  color:#94a3b8;
+  font-size:12px;
+  font-weight:700;
+}
+.contact-val{
+  color:#fff;
+  font-weight:800;
+  font-size:13px;
+}
+.btn-copy-dy{
+  background:linear-gradient(180deg,#1c3325,#112117);
+  border:1px solid #2d5a3d;
+  color:#73d89c;
+  padding:4px 10px;
+  border-radius:4px;
+  font-size:11.5px;
+  font-weight:800;
+  cursor:pointer;
+}
+.btn-copy-dy:active{
+  background:#1db954;
+  color:#fff;
+}
+.scam-warning{
+  color:#ff5555;
+  font-size:12.5px;
+  font-weight:800;
+  line-height:1.6;
+  margin-bottom:8px;
+  padding:8px 10px;
+  background:rgba(255,85,85,.08);
+  border-left:3px solid #ff5555;
+  border-radius:2px 4px 4px 2px;
+}
+.support-text{
+  color:#cbd5e1;
+  font-size:12px;
+  line-height:1.75;
+  font-weight:600;
+  margin-bottom:16px;
+}
+.btn-inspire-main{
+  width:100%;
+  padding:10px 0;
+  background:linear-gradient(180deg,#1c3325,#112117);
+  border:1px solid #2d5a3d;
+  color:#73d89c;
+  font-size:13px;
+  font-weight:800;
+  border-radius:6px;
+  cursor:pointer;
+  box-shadow:0 3px 0 #0a0b0f;
+}
+.btn-inspire-main:active{
+  transform:translateY(2px);
+  background:linear-gradient(180deg,#1db954,#128038);
+  color:#fff;
+  box-shadow:0 1px 0 #09401c;
+}
+
+/* 原版收款码展示 */
+.pay-tabs{
+  display:flex;
+  gap:8px;
+  margin-bottom:14px;
+}
+.btn-pay-tab{
+  flex:1;
+  padding:7px 0;
+  font-size:12px;
+  font-weight:800;
+  border:1px solid #2a313d;
+  background:#181c24;
+  color:#94a3b8;
+  border-radius:5px;
+  cursor:pointer;
+}
+.btn-pay-tab.active.wx{
+  background:#07c160;
+  color:#fff;
+  border-color:#07c160;
+}
+.btn-pay-tab.active.ali{
+  background:#1677ff;
+  color:#fff;
+  border-color:#1677ff;
+}
+.qr-container{
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+  background:#fff;
+  padding:12px;
+  border-radius:8px;
+  cursor:pointer;
+  box-shadow:0 8px 24px rgba(0,0,0,.6);
+}
+.qr-img{
+  width:230px;
+  height:auto;
+  max-height:300px;
+  object-fit:contain;
+  display:block;
+  border-radius:4px;
+}
+.qr-save-hint{
+  color:#475569;
+  font-size:11px;
+  font-weight:800;
+  margin-top:10px;
+  letter-spacing:.3px;
+}
+
+.toast{
+  position:fixed;
+  bottom:38px;
+  left:50%;
+  transform:translateX(-50%);
+  background:rgba(18,22,28,.95);
+  border:1px solid #3a4454;
+  color:#e2e8f0;
+  padding:8px 14px;
+  border-radius:8px;
+  font-size:11px;
+  font-weight:700;
+  text-align:center;
+  box-shadow:0 8px 24px rgba(0,0,0,.85);
+  z-index:99999999;
+  pointer-events:none;
+  opacity:0;
+  transition:opacity .2s,transform .2s;
+}
+.toast.show{
+  opacity:1;
+  transform:translateX(-50%) translateY(-6px);
+}
+</style>
+</head>
+<body>
+
+<!-- 启动强制阻断免责声明弹窗 -->
+<div class="disclaimer-overlay" id="disclaimerModal">
+  <div class="disclaimer-card">
+    <div class="disclaimer-body" id="tDiscBody">
+      本软件仅供娱乐与技术学习，严禁在道路、商场、公园、居民区等公共场所播放，严禁用于冒充特种车辆等违法行为，违者后果自负。
+    </div>
+    <div class="disclaimer-actions">
+      <button class="btn-disc-agree" id="btnDiscAgree">同意并进入</button>
+      <button class="btn-disc-refuse" id="btnDiscRefuse">拒绝并退出</button>
+    </div>
+  </div>
+</div>
+
+<div class="console">
+  <div class="lightbar" id="lightBar">
+    <div class="light-led blue" id="led0"></div>
+    <div class="light-led blue" id="led1"></div>
+    <div class="light-led blue" id="led2"></div>
+    <div class="light-led amber" id="led3"></div>
+    <div class="light-led white" id="led4"></div>
+    <div class="light-led white" id="led5"></div>
+    <div class="light-led amber" id="led6"></div>
+    <div class="light-led red" id="led7"></div>
+    <div class="light-led red" id="led8"></div>
+    <div class="light-led red" id="led9"></div>
+  </div>
+
+  <div class="brand">
+    <div class="brand-name" id="tBrandName">手机警报器</div>
+  </div>
+  <div class="statusbar">
+    <span class="led ready" id="sysLed"></span><span id="txtStatus">系统就绪</span>
+  </div>
+  <div class="content">
+    <div class="section-tag" id="tSec1">号角与广播</div>
+    <div class="grid-2">
+      <button class="btn btn-horn" id="btnHorn"><span id="tBtnHorn">气笛号角</span><span class="sub" id="tSubHorn">点按触发</span></button>
+      <button class="btn btn-mic" id="btnMic"><span id="tBtnMic">车外广播</span><span class="sub" id="micSubTxt">按住录音</span></button>
+    </div>
+
+    <div class="section-tag" id="tSec2">战术警灯</div>
+    <div class="grid-5">
+      <button class="btn btn-lightmode active" id="btnLgtAuto"><span id="tBtnAutoLgt">自动联动</span><span class="sub" id="tSubAutoLgt">随动</span></button>
+      <button class="btn btn-lightmode" id="btnLgtM1"><span id="tBtnM1">模式 1</span><span class="sub" id="tSubM1">示宽</span></button>
+      <button class="btn btn-lightmode" id="btnLgtM2"><span id="tBtnM2">模式 2</span><span class="sub" id="tSubM2">双爆</span></button>
+      <button class="btn btn-lightmode" id="btnLgtM3"><span id="tBtnM3">模式 3</span><span class="sub" id="tSubM3">大循环</span></button>
+      <button class="btn btn-takedown" id="btnStopLight"><span id="tBtnStopLgt">拦停检车</span><span class="sub" id="tSubStopLgt">前射灯</span></button>
+    </div>
+
+    <div class="section-tag" id="tSec3">手动电笛</div>
+    <div class="grid-2">
+      <button class="btn btn-manual" id="btnManualHigh"><span id="tBtnManHigh">高音电笛</span><span class="sub" id="tSubManHigh">长按爬升 / 松开滑落</span></button>
+      <button class="btn btn-manual" id="btnManualLow"><span id="tBtnManLow">低音电笛</span><span class="sub" id="tSubManLow">长按爬升 / 飞轮拖尾</span></button>
+    </div>
+
+    <div class="section-tag" id="tSec4">巡航警报</div>
+    <div class="grid-3">
+      <button class="btn btn-siren" data-siren="wail"><span id="tBtnWail">巡航 Wail</span><span class="sub" id="tSubWail">标准</span></button>
+      <button class="btn btn-siren" data-siren="wail_slow"><span id="tBtnWailSlow">慢速 Wail</span><span class="sub" id="tSubWailSlow">慢速</span></button>
+      <button class="btn btn-siren" data-siren="wail_fast"><span id="tBtnWailFast">快速 Wail</span><span class="sub" id="tSubWailFast">快速</span></button>
+    </div>
+
+    <div class="section-tag" id="tSec5">急促警报</div>
+    <div class="grid-3">
+      <button class="btn btn-siren" data-siren="yelp"><span id="tBtnYelp">急促 Yelp</span><span class="sub" id="tSubYelp">急促</span></button>
+      <button class="btn btn-siren" data-siren="priority"><span id="tBtnPriority">追击变频</span><span class="sub" id="tSubPriority">追击</span></button>
+      <button class="btn btn-siren" data-siren="phaser"><span id="tBtnPhaser">极速穿透</span><span class="sub" id="tSubPhaser">极速</span></button>
+    </div>
+
+    <div class="section-tag" id="tSec6">特种与轮换</div>
+    <div class="grid-3">
+      <button class="btn btn-siren" data-siren="warble"><span id="tBtnWarble">战术颤音</span><span class="sub" id="tSubWarble">高频颤音</span></button>
+      <button class="btn btn-siren" data-siren="hilo"><span id="tBtnHilo">救护 Hi-Lo</span><span class="sub" id="tSubHilo">救护双音</span></button>
+      <button class="btn btn-auto" id="btnAutoCycle"><span id="tBtnAuto">自动</span><span class="sub" id="autoSubText">随机轮换</span></button>
+    </div>
+
+    <div class="section-tag" id="tSec7">双音并发</div>
+    <div class="grid-2">
+      <button class="btn btn-dual" data-dual="wail,yelp"><span id="tBtnDualA">并发 A</span><span class="sub" id="tSubDualA">巡航 + 急促</span></button>
+      <button class="btn btn-dual" data-dual="yelp,warble"><span id="tBtnDualB">并发 B</span><span class="sub" id="tSubDualB">急促 + 颤音</span></button>
+    </div>
+
+    <div class="section-tag" id="tSec8">系统控制</div>
+    <div class="grid-4">
+      <button class="btn btn-howler" id="btnHowler"><span id="tBtnSubPulse">重低音脉冲</span><span class="sub" id="rumblerSubText">点击开启</span></button>
+      <button class="btn btn-util" id="btnSettings"><span id="tBtnSet">系统设置</span><span class="sub" id="tSubSet">调音设置</span></button>
+      <button class="btn btn-util" id="btnLowPower"><span id="tBtnLowPwr">低功率</span><span class="sub">-12dB</span></button>
+      <button class="btn btn-stop" id="btnStop"><span id="tBtnSilent">静音</span><span class="sub" id="tSubSilent">一键全停</span></button>
+    </div>
+  </div>
+  <div class="footer">
+    <span class="footer-ver">v1.0.0</span>
+    <div class="footer-right">
+      <span class="footer-free" id="tFooterFree">免费软件 · 严禁倒卖</span>
+      <button class="btn-contact" id="btnContactAuthor"><span id="tBtnContact">联系作者</span></button>
+    </div>
+  </div>
+</div>
+
+<!-- 模态设置弹窗 -->
+<div class="modal-overlay" id="modalOverlay">
+  <div class="modal-card">
+    <div class="modal-header">
+      <span class="modal-title" id="tSetTitle">系统设置与全局均衡</span>
+      <div style="display:flex;align-items:center;gap:10px">
+        <div class="lang-toggle">
+          <button class="btn-lang" id="btnLangZh">中文</button>
+          <button class="btn-lang" id="btnLangEn">EN</button>
+        </div>
+        <button class="btn-close" id="btnCloseModal">✕</button>
+      </div>
+    </div>
+    <div class="slider-row">
+      <span id="tSetReverb">全局混响 (0 - 100%)</span>
+      <input type="range" id="rngReverb" min="0" max="1.0" step="0.01" value="0.20">
+      <span class="slider-val" id="valReverb">20%</span>
+    </div>
+    <div class="slider-row">
+      <span id="tSetLow">全局低音 (180Hz)</span>
+      <input type="range" id="rngLow" min="-18" max="18" step="1" value="4">
+      <span class="slider-val" id="valLow">+4dB</span>
+    </div>
+    <div class="slider-row">
+      <span id="tSetMid">全局中音 (1000Hz)</span>
+      <input type="range" id="rngMid" min="-18" max="18" step="1" value="2">
+      <span class="slider-val" id="valMid">+2dB</span>
+    </div>
+    <div class="slider-row">
+      <span id="tSetHigh">全局高音 (4000Hz)</span>
+      <input type="range" id="rngHigh" min="-18" max="18" step="1" value="0">
+      <span class="slider-val" id="valHigh">0dB</span>
+    </div>
+    <div class="slider-row" style="justify-content:space-between">
+      <span id="tSetPAMode">广播模式</span>
+      <div class="lang-toggle">
+        <button class="btn-lang" id="btnPALive">实时</button>
+        <button class="btn-lang active" id="btnPARecord">回放</button>
+      </div>
+    </div>
+    <button class="btn-reset-defaults" id="btnResetDefaults">恢复默认设置</button>
+  </div>
+</div>
+
+<!-- 联系作者与激励弹窗 -->
+<div class="modal-overlay" id="contactModal">
+  <div class="modal-card">
+    <div class="modal-header">
+      <span class="modal-title" id="tContactTitle">联系作者</span>
+      <button class="btn-close" id="btnCloseContact">✕</button>
+    </div>
+
+    <!-- 第一级：作者信息与防骗独立成行警示 -->
+    <div id="contactMainPanel">
+      <div class="contact-info-row">
+        <div>
+          <div class="contact-label" id="tLblAuthor">开发作者</div>
+          <div class="contact-val">我爱玩软件</div>
+        </div>
+        <div style="text-align:right">
+          <div class="contact-label" id="tLblDy">官方抖音号</div>
+          <button class="btn-copy-dy" id="btnCopyDy">wawruanjian</button>
+        </div>
+      </div>
+
+      <div class="scam-warning" id="tWarnScam">
+        软件完全免费，如果你是花钱买的，那么你被骗了。
+      </div>
+
+      <div class="support-text" id="tSupportText">
+        你的支持是作者研发的动力，如果你觉得软件不错，可以选择激励，以维持作者的开发与更新。
+      </div>
+
+      <button class="btn-inspire-main" id="btnGoInspire">激励作者 ☕</button>
+    </div>
+
+    <!-- 第二级：展示你的原版收款图片 -->
+    <div id="contactPayPanel" style="display:none">
+      <div class="pay-tabs">
+        <button class="btn-pay-tab active wx" id="tabWx">微信支付</button>
+        <button class="btn-pay-tab ali" id="tabAli">支付宝</button>
+      </div>
+
+      <div class="qr-container" id="qrContainer">
+        <img class="qr-img" id="qrImgDisplay" alt="原版真实收款码">
+        <div class="qr-save-hint" id="tQrSaveHint">点击二维码可保存图片到相册</div>
+      </div>
+
+      <button class="btn-reset-defaults" id="btnBackContact" style="margin-top:14px;background:#181c24;border-color:#2a313d;color:#94a3b8">返回</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toastBox"></div>
+
+<script>
+(function(){
+"use strict";
+
+var DEFAULT_CONFIG = {
+  lang: "zh",
+  reverb: 0.20,
+  low: 4,
+  mid: 2,
+  high: 0,
+  paMode: "record"
+};
+
+var config = Object.assign({}, DEFAULT_CONFIG);
+try {
+  var saved = localStorage.getItem("police_siren_config_v1");
+  if (saved) {
+    var parsed = JSON.parse(saved);
+    Object.assign(config, parsed);
+  }
+} catch(e) {}
+
+function saveConfig() {
+  try {
+    localStorage.setItem("police_siren_config_v1", JSON.stringify(config));
+  } catch(e) {}
+}
+
+var currentLang = config.lang;
+var paMode = config.paMode;
+
+var i18n = {
+  zh: {
+    brandName: "手机警报器",
+    pageTitle: "手机警报器",
+    statusReady: "系统就绪",
+    sec1: "号角与广播",
+    btnHorn: "气笛号角",
+    subHorn: "点按触发",
+    btnMic: "车外广播",
+    subMicLive: "按住说话",
+    subMicRec: "按住录音",
+    subMicActive: "广播中...",
+    sec2: "战术警灯",
+    btnAutoLgt: "自动联动",
+    subAutoLgt: "随动",
+    btnM1: "模式 1",
+    subM1: "示宽",
+    btnM2: "模式 2",
+    subM2: "双爆",
+    btnM3: "模式 3",
+    subM3: "大循环",
+    btnStopLgt: "拦停检车",
+    subStopLgt: "前射灯",
+    setTitle: "系统设置与全局均衡",
+    setReverb: "全局混响 (0 - 100%)",
+    setLow: "全局低音 (180Hz)",
+    setMid: "全局中音 (1000Hz)",
+    setHigh: "全局高音 (4000Hz)",
+    sec3: "手动电笛",
+    btnManHigh: "高音电笛",
+    subManHigh: "长按爬升 / 松开滑落",
+    btnManLow: "低音电笛",
+    subManLow: "长按爬升 / 飞轮拖尾",
+    sec4: "巡航警报",
+    btnWail: "巡航 Wail",
+    subWail: "标准",
+    btnWailSlow: "慢速 Wail",
+    subWailSlow: "慢速",
+    btnWailFast: "快速 Wail",
+    subWailFast: "快速",
+    sec5: "急促警报",
+    btnYelp: "急促 Yelp",
+    subYelp: "急促",
+    btnPriority: "追击变频",
+    subPriority: "追击",
+    btnPhaser: "极速穿透",
+    subPhaser: "极速",
+    sec6: "特种与轮换",
+    btnWarble: "战术颤音",
+    subWarble: "高频颤音",
+    btnHilo: "救护 Hi-Lo",
+    subHilo: "救护双音",
+    btnAuto: "自动",
+    subAuto: "随机轮换",
+    sec7: "双音并发",
+    btnDualA: "并发 A",
+    subDualA: "巡航 + 急促",
+    btnDualB: "并发 B",
+    subDualB: "急促 + 颤音",
+    sec8: "系统控制",
+    btnSubPulse: "重低音脉冲",
+    subPulseArmed: "已就绪",
+    subPulseIdle: "点击开启",
+    subPulseActive: "纯正低音输出",
+    btnSet: "系统设置",
+    subSet: "调音设置",
+    btnLowPwr: "低功率",
+    btnSilent: "静音",
+    subSilent: "一键全停",
+    setPAMode: "广播模式",
+    paLive: "实时",
+    paRecord: "回放",
+    micRecording: "录音中...",
+    btnResetDefaults: "恢复默认设置",
+    footerFree: "免费软件 · 严禁倒卖",
+    btnContact: "联系作者",
+    contactTitle: "联系作者",
+    lblAuthor: "开发作者",
+    lblDy: "官方抖音号",
+    warnScam: "软件完全免费，如果你是花钱买的，那么你被骗了。",
+    supportText: "你的支持是作者研发的动力，如果你觉得软件不错，可以选择激励，以维持作者的开发与更新。",
+    btnGoInspire: "激励作者 ☕",
+    qrSaveHint: "点击二维码可保存图片到相册",
+    savedWx: "已保存微信激励专用二维码到本地",
+    savedAli: "已保存支付宝激励专用二维码到本地",
+    toastCopy: "已复制抖音号：wawruanjian<br><span style=\"color:#94a3b8;font-size:9.5px\">请打开抖音搜索：我爱玩软件</span>",
+    discBody: "本软件仅供娱乐与技术学习，严禁在道路、商场、公园、居民区等公共场所播放，严禁用于冒充特种车辆等违法行为，违者后果自负。",
+    btnRefuse: "拒绝并退出",
+    btnAgree: "同意并进入"
+  },
+  en: {
+    brandName: "Mobile Siren",
+    pageTitle: "Mobile Siren",
+    statusReady: "SYSTEM READY",
+    sec1: "HORN & PA",
+    btnHorn: "AIR HORN",
+    subHorn: "Tap to Pulse",
+    btnMic: "PA MIC",
+    subMicLive: "Hold to Talk",
+    subMicRec: "Hold to Rec",
+    subMicActive: "Broadcasting...",
+    sec2: "LIGHTS",
+    btnAutoLgt: "AUTO",
+    subAutoLgt: "Adaptive",
+    btnM1: "MODE 1",
+    subM1: "Cruise",
+    btnM2: "MODE 2",
+    subM2: "Flash",
+    btnM3: "MODE 3",
+    subM3: "Pursuit",
+    btnStopLgt: "TAKEDOWN",
+    subStopLgt: "Scene Light",
+    setTitle: "MASTER SETTINGS & EQ",
+    setReverb: "Reverb (0 - 100%)",
+    setLow: "Low Punch (180Hz)",
+    setMid: "Mid Peak (1000Hz)",
+    setHigh: "High Shelf (4000Hz)",
+    sec3: "MANUAL",
+    btnManHigh: "HIGH SIREN",
+    subManHigh: "Rise / Coast",
+    btnManLow: "LOW SIREN",
+    subManLow: "Inertia Coast",
+    sec4: "CRUISE PATTERNS",
+    btnWail: "WAIL STD",
+    subWail: "Standard",
+    btnWailSlow: "WAIL SLOW",
+    subWailSlow: "Slow",
+    btnWailFast: "WAIL FAST",
+    subWailFast: "Fast",
+    sec5: "RAPID PATTERNS",
+    btnYelp: "YELP STD",
+    subYelp: "Rapid",
+    btnPriority: "PRIORITY",
+    subPriority: "Pursuit",
+    btnPhaser: "PHASER",
+    subPhaser: "Piercing",
+    sec6: "SPECIALTY",
+    btnWarble: "WARBLE",
+    subWarble: "Sweeper",
+    btnHilo: "HI-LO",
+    subHilo: "Medical",
+    btnAuto: "AUTO",
+    subAuto: "Auto Cycle",
+    sec7: "DUAL OUTPUT",
+    btnDualA: "DUAL A",
+    subDualA: "Wail + Yelp",
+    btnDualB: "DUAL B",
+    subDualB: "Yelp + Warble",
+    sec8: "CONTROL",
+    btnSubPulse: "SUB-PULSE",
+    subPulseArmed: "Armed",
+    subPulseIdle: "Tap to Arm",
+    subPulseActive: "Sub Active",
+    btnSet: "SETTINGS",
+    subSet: "Audio EQ",
+    btnLowPwr: "LOW PWR",
+    btnSilent: "SILENT",
+    subSilent: "All Mute",
+    setPAMode: "PA Mode",
+    paLive: "Live",
+    paRecord: "Rec/Play",
+    micRecording: "Recording...",
+    btnResetDefaults: "Reset Defaults",
+    footerFree: "FREE SOFTWARE · DO NOT RESELL",
+    btnContact: "CONTACT",
+    contactTitle: "CONTACT",
+    lblAuthor: "Developer",
+    lblDy: "Douyin ID",
+    warnScam: "This software is 100% free. If you paid for it, you have been scammed.",
+    supportText: "Your support fuels development. If you enjoy the app, consider a tip to keep updates coming.",
+    btnGoInspire: "Tip Developer ☕",
+    qrSaveHint: "Tap QR Code to save image",
+    savedWx: "WeChat QR Code saved to gallery",
+    savedAli: "Alipay QR Code saved to gallery",
+    toastCopy: "Douyin ID Copied: wawruanjian<br><span style=\"color:#94a3b8;font-size:9.5px\">Search: 我爱玩软件</span>",
+    discBody: "This software is for entertainment and technical learning only. It is strictly prohibited to play in public places such as roads, malls, parks, and residential areas. Strictly prohibited from being used to impersonate emergency vehicles. Violators shall bear all consequences.",
+    btnRefuse: "Decline & Exit",
+    btnAgree: "Agree & Enter"
+  }
+};
+
+function applyLanguage(lang) {
+  currentLang = lang;
+  config.lang = lang;
+  saveConfig();
+
+  var d = i18n[lang];
+  document.getElementById("pageTitle").innerText = d.pageTitle;
+  document.getElementById("tBrandName").innerText = d.brandName;
+  document.getElementById("txtStatus").innerText = d.statusReady;
+  document.getElementById("tSec1").innerText = d.sec1;
+  document.getElementById("tBtnHorn").innerText = d.btnHorn;
+  document.getElementById("tSubHorn").innerText = d.subHorn;
+  document.getElementById("tBtnMic").innerText = d.btnMic;
+  if (!isMicActive) {
+    document.getElementById("micSubTxt").innerText = (paMode === "live") ? d.subMicLive : d.subMicRec;
+  }
+  document.getElementById("tSec2").innerText = d.sec2;
+  document.getElementById("tBtnAutoLgt").innerText = d.btnAutoLgt;
+  document.getElementById("tSubAutoLgt").innerText = d.subAutoLgt;
+  document.getElementById("tBtnM1").innerText = d.btnM1;
+  document.getElementById("tSubM1").innerText = d.subM1;
+  document.getElementById("tBtnM2").innerText = d.btnM2;
+  document.getElementById("tSubM2").innerText = d.subM2;
+  document.getElementById("tBtnM3").innerText = d.btnM3;
+  document.getElementById("tSubM3").innerText = d.subM3;
+  document.getElementById("tBtnStopLgt").innerText = d.btnStopLgt;
+  document.getElementById("tSubStopLgt").innerText = d.subStopLgt;
+  document.getElementById("tSetTitle").innerText = d.setTitle;
+  document.getElementById("tSetReverb").innerText = d.setReverb;
+  document.getElementById("tSetLow").innerText = d.setLow;
+  document.getElementById("tSetMid").innerText = d.setMid;
+  document.getElementById("tSetHigh").innerText = d.setHigh;
+  document.getElementById("tSec3").innerText = d.sec3;
+  document.getElementById("tBtnManHigh").innerText = d.btnManHigh;
+  document.getElementById("tSubManHigh").innerText = d.subManHigh;
+  document.getElementById("tBtnManLow").innerText = d.btnManLow;
+  document.getElementById("tSubManLow").innerText = d.subManLow;
+  document.getElementById("tSec4").innerText = d.sec4;
+  document.getElementById("tBtnWail").innerText = d.btnWail;
+  document.getElementById("tSubWail").innerText = d.subWail;
+  document.getElementById("tBtnWailSlow").innerText = d.btnWailSlow;
+  document.getElementById("tSubWailSlow").innerText = d.subWailSlow;
+  document.getElementById("tBtnWailFast").innerText = d.btnWailFast;
+  document.getElementById("tSubWailFast").innerText = d.subWailFast;
+  document.getElementById("tSec5").innerText = d.sec5;
+  document.getElementById("tBtnYelp").innerText = d.btnYelp;
+  document.getElementById("tSubYelp").innerText = d.subYelp;
+  document.getElementById("tBtnPriority").innerText = d.btnPriority;
+  document.getElementById("tSubPriority").innerText = d.subPriority;
+  document.getElementById("tBtnPhaser").innerText = d.btnPhaser;
+  document.getElementById("tSubPhaser").innerText = d.subPhaser;
+  document.getElementById("tSec6").innerText = d.sec6;
+  document.getElementById("tBtnWarble").innerText = d.btnWarble;
+  document.getElementById("tSubWarble").innerText = d.subWarble;
+  document.getElementById("tBtnHilo").innerText = d.btnHilo;
+  document.getElementById("tSubHilo").innerText = d.subHilo;
+  document.getElementById("tBtnAuto").innerText = d.btnAuto;
+  if (!isAutoCycle) document.getElementById("autoSubText").innerText = d.subAuto;
+  document.getElementById("tSec7").innerText = d.sec7;
+  document.getElementById("tBtnDualA").innerText = d.btnDualA;
+  document.getElementById("tSubDualA").innerText = d.subDualA;
+  document.getElementById("tBtnDualB").innerText = d.btnDualB;
+  document.getElementById("tSubDualB").innerText = d.subDualB;
+  document.getElementById("tSec8").innerText = d.sec8;
+  document.getElementById("tBtnSubPulse").innerText = d.btnSubPulse;
+  document.getElementById("tBtnSet").innerText = d.btnSet;
+  document.getElementById("tSubSet").innerText = d.subSet;
+  document.getElementById("tBtnLowPwr").innerText = d.btnLowPwr;
+  document.getElementById("tBtnSilent").innerText = d.btnSilent;
+  document.getElementById("tSubSilent").innerText = d.subSilent;
+
+  document.getElementById("tSetPAMode").innerText = d.setPAMode;
+  document.getElementById("btnPALive").innerText = d.paLive;
+  document.getElementById("btnPARecord").innerText = d.paRecord;
+  document.getElementById("btnResetDefaults").innerText = d.btnResetDefaults;
+
+  document.getElementById("tFooterFree").innerText = d.footerFree;
+  document.getElementById("tBtnContact").innerText = d.btnContact;
+  document.getElementById("tContactTitle").innerText = d.contactTitle;
+  document.getElementById("tLblAuthor").innerText = d.lblAuthor;
+  document.getElementById("tLblDy").innerText = d.lblDy;
+  document.getElementById("tWarnScam").innerText = d.warnScam;
+  document.getElementById("tSupportText").innerText = d.supportText;
+  document.getElementById("btnGoInspire").innerText = d.btnGoInspire;
+  document.getElementById("tQrSaveHint").innerText = d.qrSaveHint;
+
+  document.getElementById("tDiscBody").innerText = d.discBody;
+  document.getElementById("btnDiscRefuse").innerText = d.btnRefuse;
+  document.getElementById("btnDiscAgree").innerText = d.btnAgree;
+
+  document.getElementById("btnLangZh").classList.toggle("active", lang === "zh");
+  document.getElementById("btnLangEn").classList.toggle("active", lang === "en");
+  updateUI();
+}
+
+var ctx = null;
+var masterPreEQ, masterLimiter, masterOutput;
+var sirenBus1, sirenBus2, momentBus, manualBusHigh, manualBusLow, rumblerBus, rumblerMasterGate, micBus;
+var pannerL = null, pannerR = null;
+var eqLow, eqMid, eqHigh, convolverNode, reverbHighPass, dryGain, wetGain;
+
+var micStream = null;
+var micSourceNode = null;
+var isMicActive = false;
+var paRecorder = null;
+var paRecordChunks = [];
+
+var activeVoices = [];
+var currentMode = null;
+var hornVoiceNodes = [];
+var isHowlerArmed = false;
+var rumblerVoices = [];
+var hornRumblerVoice = null;
+var isLowPower = false;
+var isAutoCycle = false;
+var autoTimer = null;
+var lastAutoMode = "";
+
+var activeLightMode = "auto";
+var isStopLightActive = false;
+
+var activeToneStateList = [];
+var sirenWave = null;
+
+var HORN_SAMPLE_B64 = "df57E7srj0RvWZ9nDHBldMF11XSncT1sUGVlXRFU5UibPF8wMSR5F+AKF/9e82bnZNvGzyLGwr5/uEezUK82rX+tL6+lsYq0xrfgu4W/tcF9w73EN8UlxbzEQsboyv7QsNci32vnUPDt+PsA1geZDFUQ3BMTF+saWh81I6omjCpML900CTrZPWVAN0HzP7k87zb2Lk0mjx28FfMPBwyuCUYIHAfnBsIHGQjwBssEYwKe/+D8HPv9+Un5Zvna+cL66/ui+5L5bvbk8jHwnu0K6g3nEeX04vrgPN+53aLceNsE22HcId/b4u3mtOpe7t/xtPV2+q7/JgXTCvsQsRdnHZghuyQ8JkomyySiIWcevBpQFQIPmQjAAk39IPfW8NXq5ORH32XZOdWv1WjZOt9l5x3xZ/wVCDESAht1Iq8o5C6MNP840jvQOy45ojRtLmYnaB+1FSQL3AC49lbsQuI32cvR88w1yxrMCc+Z02/ZJuCC51DvvfYa/dACiwjzDfcRfhThFTcVsRHcC38Ervtq8Xjnud+42RvVi9L80SrTsdXA2ebfCOeO7j73fQCTCT0StxkPIMwlDSuYL9Uy0zTNNdM1UTVRNLwymC+2KQQjPx2EF5gRUQu5BYADBAS8BTMJeA1oEUoUhRSZEuIPOAzlB0wDRv7b+KXyjetK5CfdXtZU0LDK38R3vxG8Y7uLvO++9MJoyAvPI9ey337n5e5O9l39lgO7CEMN5BA4EusQdw32B6AAwvcT7iXlk95D2/DaN90l4rro4e/g9wABVAszFlcgYSoGNZY/RkrSVNVd7GS2aeFruWteaWVlnF/gVldLuz3ZLnIfaQ8T/7Puhd7izwDDtrcar1ipaabFpoapxa1htIa+f8so2SvmxvGl+xgEGgu9EPEUOxekFwQW4BKLD18L9ARK/DLyMOgR30fWEs2sw367C7UfsPas/6qEqg2t37IOvEbITtba5Vn20AY6F/Ym7TRvQANJA08kU4VVxlX4U2BRrk7dStpEwTz7M4ArtiJCGmkU1hHcEf8ThhcsHOkhsSc+LWsz2DmVP7pDNUVgRPdBSz2YNQgr/h0aDlj71uez1d3FL7n3r1eqAajEp9+omKngp4ikLKHSnqOeIKBqovKlVKvJsxHAvc7K3cbr3veeAR8IsQpkCXEF1QGaALQBDQXeCUMPtxUzHWYldy7KNps80D/FQCBACz2mNRsrBiCDFZQLVAHS9gTt7uO622bU/83VyXDHosXXxXPJ5dBU3Ljq/Ps5Eb0pikKDVxZm6W6Pc/p09nOycApr0GOvW/FRQka5OYQtliEbFa0IX/1d8iDn/dsc0cXHkMB6ulC1d7GWr8Wv/bD0smu1WLhVvOq/FMLswzbFosVYxcHEWMblysHQftf33jTnO/D0+BMB+gfBDI4QFRRVF1sbzx+HI+omripSLwY1YTo7PsxAxkHBQL89GjglMEcnRR5WFlsQGAyFCd0HfwYzBt8GIAfwBZQDBgFO/rL7A/oK+ar41fhQ+YT6wfuY+7X5cfYQ83Hwle0g6iDnw+Sf4rzgHN/L3brcltsd22/cad9945/nOOsP7+Dyi/Ys+14AewV1/g==";
+var _hornSampleBuffer = null;
+
+function decodeHornSample() {
+  if (_hornSampleBuffer) return _hornSampleBuffer;
+  var bin = atob(HORN_SAMPLE_B64);
+  var bytes = new Uint8Array(bin.length);
+  for (var i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+  var int16 = new Int16Array(bytes.buffer);
+  var buf = ctx.createBuffer(1, int16.length, 44100);
+  var ch = buf.getChannelData(0);
+  for (var i = 0; i < int16.length; i++) ch[i] = int16[i] / 32768;
+  _hornSampleBuffer = buf;
+  return buf;
+}
+
+function initWaveTables() {
+  var N = 64;
+  var rS = new Float32Array(N), iS = new Float32Array(N);
+  iS[1] = 1.00; iS[2] = 0.08; iS[3] = 0.06; iS[4] = 0.02; iS[5] = 0.03;
+  sirenWave = ctx.createPeriodicWave(rS, iS, { disableNormalization: false });
+}
+
+function createImpulseResponse(duration, decay) {
+  var rate = ctx.sampleRate;
+  var length = rate * duration;
+  var impulse = ctx.createBuffer(2, length, rate);
+  var left = impulse.getChannelData(0), right = impulse.getChannelData(1);
+  for (var i = 0; i < length; i++) {
+    var d = Math.pow(1 - i / length, decay);
+    left[i] = (Math.random() * 2 - 1) * d;
+    right[i] = (Math.random() * 2 - 1) * d;
+  }
+  return impulse;
+}
+
+function buildHornSpeakerAcoustics(inputNode, outputNode) {
+  var hp = ctx.createBiquadFilter(); hp.type = "highpass"; hp.frequency.value = 340; hp.Q.value = 0.7;
+  var body = ctx.createBiquadFilter(); body.type = "peaking"; body.frequency.value = 560; body.Q.value = 1.1; body.gain.value = 4.0;
+  var throat = ctx.createBiquadFilter(); throat.type = "peaking"; throat.frequency.value = 1350; throat.Q.value = 1.1; throat.gain.value = 4.2;
+  var rollOff = ctx.createBiquadFilter(); rollOff.type = "lowpass"; rollOff.frequency.value = 4200; rollOff.Q.value = 0.75;
+
+  var shaper = ctx.createWaveShaper();
+  var n = 1024, curve = new Float32Array(n);
+  for (var i = 0; i < n; i++) {
+    var x = (i * 2) / n - 1;
+    curve[i] = Math.tanh(x * 1.12);
+  }
+  shaper.curve = curve;
+
+  inputNode.connect(hp);
+  hp.connect(body); body.connect(throat); throat.connect(rollOff);
+  rollOff.connect(shaper); shaper.connect(outputNode);
+}
+
+function buildHeavyMechanicalLowAcoustics(inputNode, outputNode) {
+  var subPass = ctx.createBiquadFilter();
+  subPass.type = "peaking";
+  subPass.frequency.value = 120;
+  subPass.Q.value = 1.4;
+  subPass.gain.value = 5.5;
+
+  var rotorChest = ctx.createBiquadFilter();
+  rotorChest.type = "peaking";
+  rotorChest.frequency.value = 240;
+  rotorChest.Q.value = 1.8;
+  rotorChest.gain.value = 4.5;
+
+  var lp = ctx.createBiquadFilter();
+  lp.type = "lowpass";
+  lp.frequency.value = 2800;
+  lp.Q.value = 0.85;
+
+  var mechShaper = ctx.createWaveShaper();
+  var n = 1024, mCurve = new Float32Array(n);
+  for (var i = 0; i < n; i++) {
+    var x = (i * 2) / n - 1;
+    mCurve[i] = Math.tanh(x * 1.35) + 0.08 * (x * x);
+  }
+  mechShaper.curve = mCurve;
+
+  inputNode.connect(subPass);
+  subPass.connect(rotorChest);
+  rotorChest.connect(lp);
+  lp.connect(mechShaper);
+  mechShaper.connect(outputNode);
+}
+
+function ensureCtx(){
+  if (!ctx) {
+    var AC = window.AudioContext || window.webkitAudioContext;
+    ctx = new AC();
+
+    masterOutput = ctx.createGain();
+    masterOutput.gain.value = 0.75;
+
+    masterPreEQ = ctx.createGain();
+    masterPreEQ.gain.value = 0.70;
+
+    eqLow = ctx.createBiquadFilter();
+    eqLow.type = "lowshelf";
+    eqLow.frequency.value = 180;
+    eqLow.gain.value = config.low;
+
+    eqMid = ctx.createBiquadFilter();
+    eqMid.type = "peaking";
+    eqMid.frequency.value = 1000;
+    eqMid.Q.value = 1.0;
+    eqMid.gain.value = config.mid;
+
+    eqHigh = ctx.createBiquadFilter();
+    eqHigh.type = "highshelf";
+    eqHigh.frequency.value = 4000;
+    eqHigh.gain.value = config.high;
+
+    reverbHighPass = ctx.createBiquadFilter();
+    reverbHighPass.type = "highpass";
+    reverbHighPass.frequency.value = 160;
+    reverbHighPass.Q.value = 0.7;
+
+    convolverNode = ctx.createConvolver();
+    convolverNode.buffer = createImpulseResponse(1.4, 2.2);
+
+    dryGain = ctx.createGain(); dryGain.gain.value = Math.max(0.05, 1.0 - config.reverb * 0.7);
+    wetGain = ctx.createGain(); wetGain.gain.value = config.reverb;
+
+    masterLimiter = ctx.createDynamicsCompressor();
+    masterLimiter.threshold.value = -1.5;
+    masterLimiter.knee.value = 3.0;
+    masterLimiter.ratio.value = 10.0;
+    masterLimiter.attack.value = 0.003;
+    masterLimiter.release.value = 0.05;
+
+    sirenBus1 = ctx.createGain(); sirenBus1.gain.value = 1.0;
+    sirenBus2 = ctx.createGain(); sirenBus2.gain.value = 1.0;
+    momentBus = ctx.createGain(); momentBus.gain.value = 1.0;
+    
+    manualBusHigh = ctx.createGain(); manualBusHigh.gain.value = 1.0;
+    manualBusLow = ctx.createGain(); manualBusLow.gain.value = 1.0;
+    
+    rumblerBus = ctx.createGain(); rumblerBus.gain.value = 1.0;
+    rumblerMasterGate = ctx.createGain(); rumblerMasterGate.gain.value = 0.95;
+    
+    micBus = ctx.createGain(); micBus.gain.value = 5.50;
+
+    initWaveTables();
+
+    if (ctx.createStereoPanner) {
+      pannerL = ctx.createStereoPanner(); pannerL.pan.value = -0.75;
+      pannerR = ctx.createStereoPanner(); pannerR.pan.value = 0.75;
+      buildHornSpeakerAcoustics(sirenBus1, pannerL); pannerL.connect(masterPreEQ);
+      buildHornSpeakerAcoustics(sirenBus2, pannerR); pannerR.connect(masterPreEQ);
+    } else {
+      buildHornSpeakerAcoustics(sirenBus1, masterPreEQ);
+      buildHornSpeakerAcoustics(sirenBus2, masterPreEQ);
+    }
+
+    var hornHP = ctx.createBiquadFilter(); hornHP.type = "highpass"; hornHP.frequency.value = 180; hornHP.Q.value = 0.7;
+    var hornBody = ctx.createBiquadFilter(); hornBody.type = "peaking"; hornBody.frequency.value = 460; hornBody.Q.value = 0.9; hornBody.gain.value = 3.0;
+    var hornLP = ctx.createBiquadFilter(); hornLP.type = "lowpass"; hornLP.frequency.value = 5400; hornLP.Q.value = 0.8;
+    momentBus.connect(hornHP); hornHP.connect(hornBody); hornBody.connect(hornLP); hornLP.connect(masterPreEQ);
+
+    buildHornSpeakerAcoustics(manualBusHigh, masterPreEQ);
+    buildHeavyMechanicalLowAcoustics(manualBusLow, masterPreEQ);
+
+    var rHP = ctx.createBiquadFilter();
+    rHP.type = "highpass";
+    rHP.frequency.value = 48;
+    rHP.Q.value = 0.707;
+
+    var rLP = ctx.createBiquadFilter();
+    rLP.type = "lowpass";
+    rLP.frequency.value = 180;
+    rLP.Q.value = 0.8;
+
+    rumblerBus.connect(rumblerMasterGate);
+    rumblerMasterGate.connect(rHP);
+    rHP.connect(rLP);
+    rLP.connect(masterPreEQ);
+
+    var micHP = ctx.createBiquadFilter(); micHP.type = "highpass"; micHP.frequency.value = 350; micHP.Q.value = 0.9;
+    var micPunch = ctx.createBiquadFilter(); micPunch.type = "peaking"; micPunch.frequency.value = 1800; micPunch.Q.value = 1.3; micPunch.gain.value = 9.0;
+    var micLP = ctx.createBiquadFilter(); micLP.type = "lowpass"; micLP.frequency.value = 3200;
+
+    var micShaper = ctx.createWaveShaper();
+    var mn = 2048, mnCurve = new Float32Array(mn);
+    for (var mi = 0; mi < mn; mi++) {
+      var mx = (mi * 2) / mn - 1;
+      var y = mx * 3.5;
+      mnCurve[mi] = Math.max(-1, Math.min(1, y));
+    }
+    micShaper.curve = mnCurve;
+    micShaper.oversample = "2x";
+
+    micBus.connect(micHP);
+    micHP.connect(micPunch);
+    micPunch.connect(micLP);
+    micLP.connect(micShaper);
+    micShaper.connect(masterPreEQ);
+
+    masterPreEQ.connect(eqLow);
+    eqLow.connect(eqMid);
+    eqMid.connect(eqHigh);
+
+    eqHigh.connect(dryGain);
+    dryGain.connect(masterLimiter);
+
+    eqHigh.connect(reverbHighPass);
+    reverbHighPass.connect(convolverNode);
+    convolverNode.connect(wetGain);
+    wetGain.connect(masterLimiter);
+
+    masterLimiter.connect(masterOutput);
+    masterOutput.connect(ctx.destination);
+  }
+  if (ctx.state === "suspended") {
+    ctx.resume().catch(function(){});
+  }
+}
+
+function startOscillatorVoice(bus, wave, gainVal, startTime) {
+  ensureCtx();
+  var t = (typeof startTime === "number") ? startTime : ctx.currentTime;
+  var osc = ctx.createOscillator();
+  if (wave === "sine") {
+    osc.type = "sine";
+  } else {
+    osc.setPeriodicWave(wave);
+  }
+
+  var gain = ctx.createGain();
+  gain.gain.setValueAtTime(0.0001, t);
+  gain.gain.linearRampToValueAtTime(gainVal || 0.85, t + 0.020);
+
+  osc.connect(gain);
+  gain.connect(bus);
+  osc.start(t);
+
+  return {
+    osc: osc,
+    gain: gain,
+    stop: function(fadeTime) {
+      fadeTime = fadeTime || 0.030;
+      var now = ctx.currentTime;
+      gain.gain.cancelScheduledValues(now);
+      gain.gain.setValueAtTime(Math.max(0.0001, gain.gain.value), now);
+      gain.gain.linearRampToValueAtTime(0.0001, now + fadeTime);
+      setTimeout(function(){
+        try { osc.stop(); osc.disconnect(); gain.disconnect(); } catch(e){}
+      }, (fadeTime + 0.05) * 1000);
+    }
+  };
+}
+
+function getSirenToneConfig(mode) {
+  if (mode === "wail" || mode === "wail_slow" || mode === "wail_fast") {
+    var period = mode === "wail_slow" ? 8.0 : (mode === "wail_fast" ? 3.0 : 5.4);
+    return { type: "wail", fMin: 650, fMax: 1650, period: period };
+  } else if (mode === "yelp" || mode === "priority" || mode === "phaser") {
+    var rate = mode === "priority" ? 5.0 : (mode === "phaser" ? 8.0 : 3.85);
+    return { type: "yelp", fMin: 650, fMax: 1650, period: 1.0 / rate };
+  } else if (mode === "warble") {
+    return { type: "warble", fMin: 680, fMax: 1680, period: 1.0 / 12.5 };
+  } else if (mode === "hilo") {
+    return { type: "hilo", fHi: 603, fLo: 334, period: 1.0 };
+  }
+  return { type: "wail", fMin: 650, fMax: 1650, period: 5.4 };
+}
+
+function applyTonePattern(osc, config, startTime) {
+  var t = (typeof startTime === "number") ? startTime : ctx.currentTime;
+  osc.frequency.cancelScheduledValues(t);
+
+  if (config.type === "wail") {
+    var fMin = config.fMin, fMax = config.fMax, p = config.period;
+    var upT = p * 0.38, holdT = p * 0.165, downFast = p * 0.19;
+    var midF = fMin + (fMax - fMin) * 0.35;
+
+    osc.frequency.setValueAtTime(fMin, t);
+    for (var i = 0; i < 60; i++) {
+      var base = t + i * p;
+      osc.frequency.exponentialRampToValueAtTime(fMax, base + upT);
+      osc.frequency.setValueAtTime(fMax, base + upT + holdT);
+      osc.frequency.linearRampToValueAtTime(midF, base + upT + holdT + downFast);
+      osc.frequency.exponentialRampToValueAtTime(fMin, base + p);
+    }
+  } else if (config.type === "yelp") {
+    var p2 = config.period, fMin2 = config.fMin, fMax2 = config.fMax;
+    var up2 = p2 * 0.58;
+
+    osc.frequency.setValueAtTime(fMin2, t);
+    for (var j = 0; j < 600; j++) {
+      var bj = t + j * p2;
+      osc.frequency.linearRampToValueAtTime(fMax2, bj + up2);
+      osc.frequency.linearRampToValueAtTime(fMin2, bj + p2);
+    }
+  } else if (config.type === "warble") {
+    var pw = config.period, half = pw * 0.5;
+    osc.frequency.setValueAtTime(config.fMin, t);
+    for (var w = 0; w < 450; w++) {
+      var bw = t + w * pw;
+      osc.frequency.linearRampToValueAtTime(config.fMax, bw + half);
+      osc.frequency.linearRampToValueAtTime(config.fMin, bw + pw);
+    }
+  } else if (config.type === "hilo") {
+    osc.frequency.setValueAtTime(config.fHi, t);
+    for (var k = 0; k < 120; k++) {
+      osc.frequency.setValueAtTime(config.fHi, t + k);
+      osc.frequency.setValueAtTime(config.fLo, t + k + 0.5);
+    }
+  }
+}
+
+function applyRumblerCleanPattern(osc, config, startTime, phaseOffset) {
+  var t = (typeof startTime === "number") ? startTime : ctx.currentTime;
+  var offset = phaseOffset || 0;
+  osc.frequency.cancelScheduledValues(t);
+
+  var fMin = 54, fMax = 92, period = config.period, t0 = t - offset;
+
+  if (config.type === "wail") {
+    var upT = period * 0.38, holdT = period * 0.165, downFast = period * 0.19;
+    var midF = fMin + (fMax - fMin) * 0.35;
+
+    osc.frequency.setValueAtTime(fMin, t);
+    for (var i = 0; i < 60; i++) {
+      var base = t0 + i * period;
+      if (base + period < t) continue;
+      var targetUp = base + upT;
+      if (targetUp > t + 0.08) osc.frequency.exponentialRampToValueAtTime(fMax, targetUp);
+      var targetHold = base + upT + holdT;
+      if (targetHold > t + 0.08) osc.frequency.setValueAtTime(fMax, targetHold);
+      var targetMid = base + upT + holdT + downFast;
+      if (targetMid > t + 0.08) osc.frequency.linearRampToValueAtTime(midF, targetMid);
+      var targetEnd = base + period;
+      if (targetEnd > t + 0.08) osc.frequency.exponentialRampToValueAtTime(fMin, targetEnd);
+    }
+  } else if (config.type === "yelp" || config.type === "warble") {
+    var p2 = config.period, up = p2 * 0.58;
+    var steps = (config.type === "warble") ? 450 : 600;
+    osc.frequency.setValueAtTime(fMin, t);
+    for (var j = 0; j < steps; j++) {
+      var bj = t0 + j * p2;
+      if (bj + p2 < t) continue;
+      osc.frequency.linearRampToValueAtTime(fMax, bj + up);
+      osc.frequency.linearRampToValueAtTime(fMin, bj + p2);
+    }
+  } else if (config.type === "hilo") {
+    for (var k = 0; k < 120; k++) {
+      var bk = t0 + k;
+      if (bk + 1 < t) continue;
+      osc.frequency.setValueAtTime(fMax, bk);
+      osc.frequency.setValueAtTime(fMin, bk + 0.5);
+    }
+  }
+}
+
+function startRumblerCleanUnit(cfg, t0, phaseOffset, gainVal) {
+  gainVal = (typeof gainVal === "number") ? gainVal : 0.95;
+  var osc = ctx.createOscillator();
+  osc.type = "sine";
+  applyRumblerCleanPattern(osc, cfg, t0, phaseOffset);
+
+  var gain = ctx.createGain();
+  gain.gain.setValueAtTime(0.0001, t0);
+  gain.gain.linearRampToValueAtTime(gainVal, t0 + 0.035);
+
+  osc.connect(gain);
+  gain.connect(rumblerBus);
+  osc.start(t0);
+  rumblerVoices.push({ osc: osc, gain: gain });
+}
+
+function syncRumblerToActiveState(startTime) {
+  ensureCtx();
+  var now = ctx.currentTime;
+
+  if (hornVoiceNodes.length > 0) {
+    stopRumblerNow();
+    updateUI();
+    return;
+  }
+
+  rumblerMasterGate.gain.cancelScheduledValues(now);
+  rumblerMasterGate.gain.setValueAtTime(Math.max(0.0001, rumblerMasterGate.gain.value), now);
+  rumblerMasterGate.gain.linearRampToValueAtTime(0.0001, now + 0.015);
+
+  stopRumblerNow();
+  if (!isHowlerArmed || activeToneStateList.length === 0) {
+    updateUI();
+    return;
+  }
+
+  var t0 = now + 0.020;
+  var isDual = activeToneStateList.length > 1;
+  var perGain = isDual ? 0.55 : 0.95;
+
+  activeToneStateList.forEach(function(cfg) {
+    var phaseOffset = (cfg._t0 && now > cfg._t0) ? ((now - cfg._t0) % cfg.period) : 0;
+    startRumblerCleanUnit(cfg, t0, phaseOffset, perGain);
+  });
+
+  rumblerMasterGate.gain.setValueAtTime(0.0001, t0);
+  rumblerMasterGate.gain.linearRampToValueAtTime(0.95, t0 + 0.030);
+  updateUI();
+}
+
+function stopRumblerNow() {
+  var now = ctx.currentTime;
+  if (rumblerVoices.length > 0) {
+    rumblerVoices.forEach(function(v) {
+      try {
+        if (v.gain) {
+          v.gain.gain.cancelScheduledValues(now);
+          v.gain.gain.setValueAtTime(Math.max(0.0001, v.gain.gain.value), now);
+          v.gain.gain.linearRampToValueAtTime(0.0001, now + 0.015);
+        }
+        setTimeout(function(){
+          try { if (v.osc) { v.osc.stop(); v.osc.disconnect(); } } catch(e){}
+          try { if (v.gain) { v.gain.disconnect(); } } catch(e){}
+        }, 30);
+      } catch(e){}
+    });
+    rumblerVoices = [];
+  }
+}
+
+function toggleHowler() {
+  ensureCtx();
+  isHowlerArmed = !isHowlerArmed;
+  if (isHowlerArmed) {
+    if (hornVoiceNodes.length > 0) startHornRumbler();
+    else syncRumblerToActiveState();
+  } else {
+    stopRumblerNow();
+    stopHornRumbler();
+  }
+  updateUI();
+}
+
+class DedicatedManualEngine {
+  constructor(tag, targetF, lowestF, riseTC, coastTC, busGetter, baseGain, coastDur) {
+    this.tag = tag;
+    this.targetF = targetF;
+    this.lowestF = lowestF;
+    this.riseTC = riseTC;
+    this.coastTC = coastTC;
+    this.busGetter = busGetter;
+    this.baseGain = baseGain;
+    this.coastDur = coastDur;
+    this.voice = null;
+    this.state = "idle";
+    this.timer = null;
+  }
+
+  press() {
+    ensureCtx();
+    var now = ctx.currentTime;
+    if (this.timer) { clearTimeout(this.timer); this.timer = null; }
+
+    var targetBus = this.busGetter();
+
+    if (this.state === "idle" || !this.voice) {
+      this.voice = startOscillatorVoice(targetBus, sirenWave, this.baseGain, now);
+      this.voice.osc.frequency.setValueAtTime(this.lowestF, now);
+      this.state = "rising";
+      this.voice.osc.frequency.setTargetAtTime(this.targetF, now, this.riseTC);
+    } else {
+      this.voice.osc.frequency.cancelScheduledValues(now);
+      this.voice.gain.gain.cancelScheduledValues(now);
+      this.voice.gain.gain.setTargetAtTime(this.baseGain, now, 0.02);
+      this.voice.osc.frequency.setTargetAtTime(this.targetF, now, this.riseTC);
+      this.state = "rising";
+    }
+    updateUI();
+  }
+
+  release() {
+    if (this.state === "idle" || !this.voice) return;
+    var now = ctx.currentTime;
+    this.state = "coasting";
+
+    this.voice.osc.frequency.cancelScheduledValues(now);
+    this.voice.gain.gain.cancelScheduledValues(now);
+    this.voice.osc.frequency.setTargetAtTime(this.lowestF, now, this.coastTC);
+
+    this.voice.gain.gain.setValueAtTime(this.baseGain, now);
+    this.voice.gain.gain.setValueAtTime(this.baseGain * 0.9, now + this.coastDur * 0.40);
+    this.voice.gain.gain.exponentialRampToValueAtTime(0.0001, now + this.coastDur);
+
+    var self = this;
+    this.timer = setTimeout(function(){
+      self.stop();
+      updateUI();
+    }, this.coastDur * 1000 + 50);
+  }
+
+  stop() {
+    if (this.voice) { this.voice.stop(0.04); this.voice = null; }
+    this.state = "idle";
+  }
+}
+
+var manualHighCtrl = new DedicatedManualEngine("high", 1650, 420, 0.60, 1.10, function(){ return manualBusHigh; }, 0.95, 4.0);
+var manualLowCtrl  = new DedicatedManualEngine("low",  1520, 180, 0.90, 1.50, function(){ return manualBusLow; },  0.95, 5.2);
+
+function cleanupHornVoices() {
+  if (hornVoiceNodes.length > 0) {
+    var now = ctx.currentTime;
+    hornVoiceNodes.forEach(function(v) {
+      if (v.gain) {
+        try {
+          v.gain.gain.cancelScheduledValues(now);
+          v.gain.gain.setValueAtTime(Math.max(0.0001, v.gain.gain.value), now);
+          v.gain.gain.linearRampToValueAtTime(0.0001, now + 0.008);
+        } catch(e){}
+      }
+      setTimeout(function(){
+        try {
+          if (v.src) { v.src.stop(); v.src.disconnect(); }
+          if (v.gain) { v.gain.disconnect(); }
+        } catch(e){}
+      }, 20);
+    });
+    hornVoiceNodes = [];
+  }
+}
+
+function startHornRumbler() {
+  stopHornRumbler();
+  if (!isHowlerArmed) return;
+  ensureCtx();
+  var t = ctx.currentTime;
+
+  rumblerMasterGate.gain.cancelScheduledValues(t);
+  rumblerMasterGate.gain.setValueAtTime(0.95, t);
+
+  var osc = ctx.createOscillator();
+  osc.type = "sine";
+  osc.frequency.setValueAtTime(86, t);
+  osc.frequency.exponentialRampToValueAtTime(58, t + 0.040);
+
+  var gain = ctx.createGain();
+  gain.gain.setValueAtTime(0.0001, t);
+  gain.gain.linearRampToValueAtTime(1.0, t + 0.012);
+
+  osc.connect(gain);
+  gain.connect(rumblerBus);
+  osc.start(t);
+
+  hornRumblerVoice = { osc: osc, gain: gain };
+}
+
+function stopHornRumbler() {
+  if (hornRumblerVoice) {
+    var now = ctx.currentTime;
+    var hv = hornRumblerVoice;
+    hornRumblerVoice = null;
+    try {
+      hv.gain.gain.cancelScheduledValues(now);
+      hv.gain.gain.setValueAtTime(Math.max(0.0001, hv.gain.gain.value), now);
+      hv.gain.gain.linearRampToValueAtTime(0.0001, now + 0.015);
+      setTimeout(function(){
+        try { hv.osc.stop(); hv.osc.disconnect(); } catch(e){}
+        try { hv.gain.disconnect(); } catch(e){}
+      }, 30);
+    } catch(e){}
+  }
+}
+
+function hornPress() {
+  ensureCtx();
+  var t = ctx.currentTime;
+  sirenBus1.gain.setValueAtTime(0.001, t);
+  sirenBus2.gain.setValueAtTime(0.001, t);
+  stopRumblerNow();
+  cleanupHornVoices();
+
+  var src = ctx.createBufferSource();
+  src.buffer = decodeHornSample();
+  src.loop = true;
+  var gain = ctx.createGain();
+  gain.gain.setValueAtTime(0.95, t);
+  src.connect(gain);
+  gain.connect(momentBus);
+  src.start(t);
+
+  hornVoiceNodes = [{ src: src, gain: gain }];
+
+  if (isHowlerArmed) { startHornRumbler(); }
+  updateUI();
+}
+
+function resumeMainSirenFromScratch() {
+  cleanupHornVoices();
+  stopHornRumbler();
+
+  activeVoices.forEach(function(v){ try { v.stop(0.02); } catch(e){} });
+  activeVoices = [];
+
+  var t = ctx.currentTime + 0.025;
+  if (currentMode) {
+    if (currentMode.indexOf(",") !== -1) {
+      var modes = currentMode.split(",");
+      var cfg1 = getSirenToneConfig(modes[0]); cfg1._t0 = t;
+      var cfg2 = getSirenToneConfig(modes[1]); cfg2._t0 = t;
+      var targetVol = isLowPower ? 0.25 : 1.0;
+      sirenBus1.gain.setValueAtTime(targetVol, t);
+      sirenBus2.gain.setValueAtTime(targetVol, t);
+
+      var v1 = startOscillatorVoice(sirenBus1, sirenWave, 0.72, t);
+      applyTonePattern(v1.osc, cfg1, t);
+      activeVoices.push(v1);
+
+      var v2 = startOscillatorVoice(sirenBus2, sirenWave, 0.72, t);
+      applyTonePattern(v2.osc, cfg2, t);
+      activeVoices.push(v2);
+
+      activeToneStateList = [cfg1, cfg2];
+      stopRumblerNow();
+    } else {
+      var cfg = getSirenToneConfig(currentMode); cfg._t0 = t;
+      sirenBus1.gain.setValueAtTime(0.001, t);
+      sirenBus1.gain.linearRampToValueAtTime(isLowPower ? 0.25 : 1.0, t + 0.015);
+
+      var v = startOscillatorVoice(sirenBus1, sirenWave, 0.88, t);
+      applyTonePattern(v.osc, cfg, t);
+      activeVoices.push(v);
+
+      activeToneStateList = [cfg];
+      if (isHowlerArmed) syncRumblerToActiveState(t);
+    }
+  } else {
+    activeToneStateList = [];
+    stopRumblerNow();
+  }
+  updateUI();
+}
+
+function restoreCurrentModeState() {
+  if (!currentMode) return;
+  var now = ctx.currentTime;
+  if (currentMode.indexOf(",") !== -1) {
+    var modes = currentMode.split(",");
+    var c1 = getSirenToneConfig(modes[0]); c1._t0 = now;
+    var c2 = getSirenToneConfig(modes[1]); c2._t0 = now;
+    activeToneStateList = [c1, c2];
+  } else {
+    var c = getSirenToneConfig(currentMode); c._t0 = now;
+    activeToneStateList = [c];
+  }
+}
+
+function startMicPA() {
+  ensureCtx();
+  if (isMicActive) return;
+
+  var t = ctx.currentTime;
+  sirenBus1.gain.setTargetAtTime(0.15, t, 0.02);
+  sirenBus2.gain.setTargetAtTime(0.15, t, 0.02);
+
+  if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+    alert("当前浏览器环境不支持麦克风调用");
+    return;
+  }
+
+  navigator.mediaDevices.getUserMedia({
+    audio: { echoCancellation: false, noiseSuppression: false, autoGainControl: false }
+  }).then(function(stream){
+    micStream = stream;
+
+    if (paMode === "live") {
+      micSourceNode = ctx.createMediaStreamSource(stream);
+      micSourceNode.connect(micBus);
+    } else {
+      paRecordChunks = [];
+      try {
+        paRecorder = new MediaRecorder(stream);
+        paRecorder.ondataavailable = function(e){ if (e.data && e.data.size) paRecordChunks.push(e.data); };
+        paRecorder.onstop = playRecordedPA;
+        paRecorder.start();
+      } catch (err) {
+        console.warn("MediaRecorder 不可用，回退实时:", err);
+        micSourceNode = ctx.createMediaStreamSource(stream);
+        micSourceNode.connect(micBus);
+        paMode = "live";
+        config.paMode = "live";
+        saveConfig();
+      }
+    }
+
+    isMicActive = true;
+    document.getElementById("btnMic").classList.add("pressed");
+    document.getElementById("micSubTxt").innerText =
+      (paMode === "live") ? i18n[currentLang].subMicActive : i18n[currentLang].micRecording;
+    updateUI();
+  }).catch(function(err){
+    console.warn("麦克风权限受阻:", err);
+  });
+}
+
+function stopMicPA() {
+  if (!isMicActive) return;
+  isMicActive = false;
+
+  if (paMode === "live") {
+    if (micSourceNode) { try { micSourceNode.disconnect(); } catch(e){} micSourceNode = null; }
+    if (micStream) { micStream.getTracks().forEach(function(tk){ tk.stop(); }); micStream = null; }
+  } else {
+    if (paRecorder && paRecorder.state === "recording") {
+      paRecorder.stop();
+    }
+  }
+
+  var t = ctx.currentTime;
+  var targetVol = isLowPower ? 0.25 : 1.0;
+  sirenBus1.gain.setTargetAtTime(targetVol, t, 0.04);
+  sirenBus2.gain.setTargetAtTime(targetVol, t, 0.04);
+
+  document.getElementById("btnMic").classList.remove("pressed");
+  document.getElementById("micSubTxt").innerText =
+    (paMode === "live") ? i18n[currentLang].subMicLive : i18n[currentLang].subMicRec;
+  updateUI();
+}
+
+function playRecordedPA() {
+  if (micStream) { micStream.getTracks().forEach(function(tk){ tk.stop(); }); micStream = null; }
+  paRecorder = null;
+
+  if (paRecordChunks.length === 0) return;
+
+  var mimeType = (paRecordChunks[0] && paRecordChunks[0].type) || "audio/webm";
+  var blob = new Blob(paRecordChunks, { type: mimeType });
+  paRecordChunks = [];
+  var url = URL.createObjectURL(blob);
+
+  fetch(url)
+    .then(function(r){ return r.arrayBuffer(); })
+    .then(function(ab){
+      return new Promise(function(resolve){
+        ctx.decodeAudioData(ab, function(buf){ resolve(buf); }, function(){ resolve(null); });
+      });
+    })
+    .then(function(buf){
+      URL.revokeObjectURL(url);
+      if (!buf) { console.warn("录音解码失败"); return; }
+
+      var src = ctx.createBufferSource();
+      src.buffer = buf;
+      src.connect(micBus);
+
+      var t = ctx.currentTime;
+      sirenBus1.gain.setTargetAtTime(0.10, t, 0.03);
+      sirenBus2.gain.setTargetAtTime(0.10, t, 0.03);
+
+      src.onended = function(){
+        try { src.disconnect(); } catch(e){}
+        var t2 = ctx.currentTime;
+        var vol = isLowPower ? 0.25 : 1.0;
+        sirenBus1.gain.setTargetAtTime(vol, t2, 0.06);
+        sirenBus2.gain.setTargetAtTime(vol, t2, 0.06);
+      };
+
+      src.start(t);
+    })
+    .catch(function(err){
+      console.warn("PA 回放失败:", err);
+      URL.revokeObjectURL(url);
+    });
+}
+
+var leds = [];
+for (var li = 0; li < 10; li++) {
+  leds.push(document.getElementById("led" + li));
+}
+
+function set10LedState(arr) {
+  for (var i = 0; i < 10; i++) {
+    leds[i].classList.toggle("on", !!arr[i]);
+  }
+}
+
+function renderLEDEngine() {
+  var now = performance.now();
+
+  if (hornVoiceNodes.length > 0 || manualHighCtrl.state !== "idle" || manualLowCtrl.state !== "idle" || isMicActive) {
+    var tBurst = Math.floor(now / 80) % 4;
+    if (tBurst === 0) {
+      set10LedState([1,1,1, 1, 1,1, 1, 0,0,0]);
+    } else if (tBurst === 2) {
+      set10LedState([0,0,0, 1, 1,1, 1, 1,1,1]);
+    } else {
+      set10LedState([0,0,0, 0, 1,1, 0, 0,0,0]);
+    }
+    requestAnimationFrame(renderLEDEngine);
+    return;
+  }
+
+  if (isStopLightActive) {
+    var pStop = now % 1200;
+    var amberPulse = (pStop < 600) ? 1 : 0;
+    set10LedState([0,0,0, amberPulse, 1,1, amberPulse, 0,0,0]);
+    requestAnimationFrame(renderLEDEngine);
+    return;
+  }
+
+  var mode = activeLightMode;
+
+  if (mode === "mode1") {
+    var p1 = now % 1000;
+    if (p1 < 500) {
+      set10LedState([1,0,0, 0, 0,0, 0, 0,0,0]);
+    } else {
+      set10LedState([0,0,0, 0, 0,0, 0, 0,0,1]);
+    }
+    requestAnimationFrame(renderLEDEngine);
+    return;
+  }
+
+  if (mode === "mode2") {
+    var p2 = now % 650;
+    if (p2 < 325) {
+      if ((p2 >= 0 && p2 < 70) || (p2 >= 130 && p2 < 200)) {
+        set10LedState([1,1,1, 1, 0,0, 0, 0,0,0]);
+      } else {
+        set10LedState([0,0,0, 0, 0,0, 0, 0,0,0]);
+      }
+    } else {
+      var p2R = p2 - 325;
+      if ((p2R >= 0 && p2R < 70) || (p2R >= 130 && p2R < 200)) {
+        set10LedState([0,0,0, 0, 0,0, 1, 1,1,1]);
+      } else {
+        set10LedState([0,0,0, 0, 0,0, 0, 0,0,0]);
+      }
+    }
+    requestAnimationFrame(renderLEDEngine);
+    return;
+  }
+
+  if (mode === "mode3") {
+    renderExtendedTacticalPattern(now);
+    requestAnimationFrame(renderLEDEngine);
+    return;
+  }
+
+  if (mode === "auto") {
+    if (!currentMode) {
+      var pStd = now % 1400;
+      var arrStd = [0,0,0, 0, 0,0, 0, 0,0,0];
+      if (pStd < 70) arrStd[0] = 1;
+      if (pStd >= 700 && pStd < 770) arrStd[9] = 1;
+      set10LedState(arrStd);
+    } else if (currentMode === "wail" || currentMode === "wail_slow" || currentMode === "wail_fast") {
+      var pw = now % 900;
+      if (pw < 450) {
+        set10LedState([1,1,1, 1, 0,0, 0, 0,0,0]);
+      } else {
+        set10LedState([0,0,0, 0, 0,0, 1, 1,1,1]);
+      }
+    } else if (currentMode === "yelp" || currentMode === "priority" || currentMode === "phaser") {
+      var py = now % 800;
+      if (py < 400) {
+        var subY = py % 80;
+        if (py < 320 && subY < 40) {
+          set10LedState([1,1,1, 1, 1,0, 0, 0,0,0]);
+        } else {
+          set10LedState([0,0,0, 0, 0,0, 0, 0,0,0]);
+        }
+      } else {
+        var pyR = py - 400;
+        var subYR = pyR % 80;
+        if (pyR < 320 && subYR < 40) {
+          set10LedState([0,0,0, 0, 0,1, 1, 1,1,1]);
+        } else {
+          set10LedState([0,0,0, 0, 0,0, 0, 0,0,0]);
+        }
+      }
+    } else if (currentMode === "warble") {
+      var pwb = Math.floor(now / 70) % 4;
+      if (pwb === 0) set10LedState([1,0,1, 1, 1,0, 0, 0,1,0]);
+      else if (pwb === 2) set10LedState([0,1,0, 0, 0,1, 1, 1,0,1]);
+      else set10LedState([0,0,0, 0, 0,0, 0, 0,0,0]);
+    } else if (currentMode === "hilo") {
+      var ph = now % 1000;
+      if (ph < 500) set10LedState([1,1,1, 0, 0,0, 0, 0,0,0]);
+      else set10LedState([0,0,0, 0, 0,0, 0, 1,1,1]);
+    } else {
+      renderExtendedTacticalPattern(now);
+    }
+    requestAnimationFrame(renderLEDEngine);
+  }
+}
+
+function renderExtendedTacticalPattern(now) {
+  var t = now % 3600;
+  if (t < 800) {
+    if ((t >= 0 && t < 80) || (t >= 140 && t < 220) || (t >= 280 && t < 360) || (t >= 420 && t < 500)) {
+      set10LedState([1,1,1, 1, 0,0, 0, 0,0,0]);
+    } else {
+      set10LedState([0,0,0, 0, 0,0, 0, 0,0,0]);
+    }
+    return;
+  }
+  if (t >= 800 && t < 1600) {
+    var tR = t - 800;
+    if ((tR >= 0 && tR < 80) || (tR >= 140 && tR < 220) || (tR >= 280 && tR < 360) || (tR >= 420 && tR < 500)) {
+      set10LedState([0,0,0, 0, 0,0, 1, 1,1,1]);
+    } else {
+      set10LedState([0,0,0, 0, 0,0, 0, 0,0,0]);
+    }
+    return;
+  }
+  if (t >= 1600 && t < 2800) {
+    var tAlt = (t - 1600) % 240;
+    if (tAlt < 120) {
+      set10LedState([1,1,1, 1, 0,0, 0, 0,0,0]);
+    } else {
+      set10LedState([0,0,0, 0, 0,0, 1, 1,1,1]);
+    }
+    return;
+  }
+  if (t >= 2800) {
+    var tAll = t - 2800;
+    if ((tAll >= 0 && tAll < 90) || (tAll >= 170 && tAll < 260) || (tAll >= 340 && tAll < 430) || (tAll >= 510 && tAll < 600)) {
+      set10LedState([1,1,1, 1, 1,1, 1, 1,1,1]);
+    } else {
+      set10LedState([0,0,0, 0, 0,0, 0, 0,0,0]);
+    }
+    return;
+  }
+}
+
+requestAnimationFrame(renderLEDEngine);
+
+function setLightMode(mode) {
+  isStopLightActive = false;
+  document.getElementById("btnStopLight").classList.remove("active");
+
+  activeLightMode = mode;
+  document.getElementById("btnLgtAuto").classList.toggle("active", mode === "auto");
+  document.getElementById("btnLgtM1").classList.toggle("active", mode === "mode1");
+  document.getElementById("btnLgtM2").classList.toggle("active", mode === "mode2");
+  document.getElementById("btnLgtM3").classList.toggle("active", mode === "mode3");
+}
+
+function toggleStopLight() {
+  isStopLightActive = !isStopLightActive;
+  document.getElementById("btnStopLight").classList.toggle("active", isStopLightActive);
+  if (isStopLightActive) {
+    document.getElementById("btnLgtAuto").classList.remove("active");
+    document.getElementById("btnLgtM1").classList.remove("active");
+    document.getElementById("btnLgtM2").classList.remove("active");
+    document.getElementById("btnLgtM3").classList.remove("active");
+  } else {
+    setLightMode(activeLightMode);
+  }
+}
+
+var autoPool = [
+  { mode: "wail", name: "巡航" },
+  { mode: "yelp", name: "急促" },
+  { mode: "phaser", name: "穿透" },
+  { mode: "warble", name: "颤音" }
+];
+
+function pickNextRandomAuto() {
+  var candidates = autoPool.filter(function(item){ return item.mode !== lastAutoMode; });
+  return candidates[Math.floor(Math.random() * candidates.length)];
+}
+
+function runAutoCycleStep() {
+  if (!isAutoCycle) return;
+  var next = pickNextRandomAuto();
+  lastAutoMode = next.mode;
+
+  playSingle(next.mode, true);
+
+  var subText = document.getElementById("autoSubText");
+  if (subText) subText.innerText = (currentLang === "zh" ? "自动中: " : "Auto: ") + next.name;
+
+  autoTimer = setTimeout(runAutoCycleStep, 5000);
+}
+
+function toggleAutoCycle() {
+  ensureCtx();
+  isAutoCycle = !isAutoCycle;
+  if (isAutoCycle) {
+    lastAutoMode = "";
+    runAutoCycleStep();
+  } else {
+    if (autoTimer) { clearTimeout(autoTimer); autoTimer = null; }
+    var subText = document.getElementById("autoSubText");
+    if (subText) subText.innerText = i18n[currentLang].subAuto;
+    stopAllSirens();
+  }
+  updateUI();
+}
+
+function playSingle(key, keepAuto) {
+  ensureCtx();
+  if (!keepAuto && isAutoCycle) {
+    isAutoCycle = false;
+    if (autoTimer) { clearTimeout(autoTimer); autoTimer = null; }
+    var subText = document.getElementById("autoSubText");
+    if (subText) subText.innerText = i18n[currentLang].subAuto;
+  }
+
+  if (currentMode === key && !isAutoCycle) { stopAllSirens(); return; }
+  stopAllSirens(true);
+  currentMode = key;
+
+  var t = ctx.currentTime + 0.025;
+  sirenBus1.gain.setValueAtTime(0.001, t);
+  sirenBus1.gain.linearRampToValueAtTime(isLowPower ? 0.25 : 1.0, t + 0.015);
+
+  var cfg = getSirenToneConfig(key);
+  cfg._t0 = t;
+
+  var v = startOscillatorVoice(sirenBus1, sirenWave, 0.88, t);
+  applyTonePattern(v.osc, cfg, t);
+  activeVoices.push(v);
+
+  activeToneStateList = [cfg];
+  if (isHowlerArmed && !hornVoiceNodes.length) {
+    syncRumblerToActiveState(t);
+  }
+  updateUI();
+}
+
+function playDual(keysStr) {
+  ensureCtx();
+  if (isAutoCycle) {
+    isAutoCycle = false;
+    if (autoTimer) { clearTimeout(autoTimer); autoTimer = null; }
+    var subText = document.getElementById("autoSubText");
+    if (subText) subText.innerText = i18n[currentLang].subAuto;
+  }
+
+  if (currentMode === keysStr) { stopAllSirens(); return; }
+  stopAllSirens(true);
+  currentMode = keysStr;
+
+  var t = ctx.currentTime + 0.025;
+  var targetVol = isLowPower ? 0.25 : 1.0;
+  
+  sirenBus1.gain.setValueAtTime(targetVol, t);
+  sirenBus2.gain.setValueAtTime(targetVol, t);
+
+  var modes = keysStr.split(",");
+  var cfg1 = getSirenToneConfig(modes[0]);
+  var cfg2 = getSirenToneConfig(modes[1]);
+  cfg1._t0 = t;
+  cfg2._t0 = t;
+
+  var v1 = startOscillatorVoice(sirenBus1, sirenWave, 0.72, t);
+  applyTonePattern(v1.osc, cfg1, t);
+  activeVoices.push(v1);
+
+  var v2 = startOscillatorVoice(sirenBus2, sirenWave, 0.72, t);
+  applyTonePattern(v2.osc, cfg2, t);
+  activeVoices.push(v2);
+
+  activeToneStateList = [cfg2];
+  if (isHowlerArmed && !hornVoiceNodes.length) {
+    syncRumblerToActiveState(t);
+  } else {
+    stopRumblerNow();
+  }
+  updateUI();
+}
+
+function stopAllSirens(silent) {
+  activeVoices.forEach(function(v){ v.stop(0.03); });
+  activeVoices = [];
+  currentMode = null;
+
+  activeToneStateList = [];
+  stopRumblerNow();
+  stopHornRumbler();
+  if (!silent) updateUI();
+}
+
+function stopAll() {
+  if (isAutoCycle) {
+    isAutoCycle = false;
+    if (autoTimer) { clearTimeout(autoTimer); autoTimer = null; }
+    var subText = document.getElementById("autoSubText");
+    if (subText) subText.innerText = i18n[currentLang].subAuto;
+  }
+  stopAllSirens(true);
+  cleanupHornVoices();
+  stopHornRumbler();
+  manualHighCtrl.stop();
+  manualLowCtrl.stop();
+  stopMicPA();
+  stopRumblerNow();
+  isHowlerArmed = false;
+  updateUI();
+}
+
+function toggleLowPower() {
+  ensureCtx();
+  isLowPower = !isLowPower;
+  var tg = isLowPower ? 0.25 : 1.0;
+  masterPreEQ.gain.setTargetAtTime(tg * 0.70, ctx.currentTime, 0.04);
+  updateUI();
+}
+
+function openModal() {
+  document.getElementById("modalOverlay").classList.add("open");
+}
+function closeModal() {
+  document.getElementById("modalOverlay").classList.remove("open");
+}
+
+function openContactModal() {
+  document.getElementById("contactMainPanel").style.display = "block";
+  document.getElementById("contactPayPanel").style.display = "none";
+  document.getElementById("contactModal").classList.add("open");
+}
+function closeContactModal() {
+  document.getElementById("contactModal").classList.remove("open");
+}
+
+function updateUI() {
+  document.querySelectorAll("[data-siren]").forEach(function(b){
+    b.classList.toggle("active", b.dataset.siren === currentMode);
+  });
+  document.querySelectorAll("[data-dual]").forEach(function(b){
+    b.classList.toggle("active", b.dataset.dual === currentMode);
+  });
+
+  var btnAuto = document.getElementById("btnAutoCycle");
+  if (btnAuto) btnAuto.classList.toggle("active", isAutoCycle);
+
+  var bh = document.getElementById("btnHowler");
+  var subTxt = document.getElementById("rumblerSubText");
+  var d = i18n[currentLang];
+  if (isHowlerArmed) {
+    var isActuallySounding = rumblerVoices.length > 0 || hornRumblerVoice;
+    bh.classList.toggle("armed", !isActuallySounding);
+    bh.classList.toggle("active", isActuallySounding);
+    subTxt.innerText = isActuallySounding ? d.subPulseActive : d.subPulseArmed;
+  } else {
+    bh.classList.remove("armed", "active");
+    subTxt.innerText = d.subPulseIdle;
+  }
+
+  document.getElementById("btnLowPower").classList.toggle("active", isLowPower);
+  var led = document.getElementById("sysLed");
+  var running = !!(currentMode || hornVoiceNodes.length || manualHighCtrl.state !== "idle" || manualLowCtrl.state !== "idle" || rumblerVoices.length > 0 || hornRumblerVoice || isAutoCycle || isMicActive || isStopLightActive);
+  led.classList.toggle("active", running);
+}
+
+function syncUIFromConfig() {
+  document.getElementById("rngReverb").value = config.reverb;
+  document.getElementById("valReverb").innerText = Math.round(config.reverb * 100) + "%";
+
+  document.getElementById("rngLow").value = config.low;
+  document.getElementById("valLow").innerText = (config.low > 0 ? "+" : "") + config.low + "dB";
+
+  document.getElementById("rngMid").value = config.mid;
+  document.getElementById("valMid").innerText = (config.mid > 0 ? "+" : "") + config.mid + "dB";
+
+  document.getElementById("rngHigh").value = config.high;
+  document.getElementById("valHigh").innerText = (config.high > 0 ? "+" : "") + config.high + "dB";
+
+  document.getElementById("btnPALive").classList.toggle("active", config.paMode === "live");
+  document.getElementById("btnPARecord").classList.toggle("active", config.paMode === "record");
+
+  if (ctx) {
+    wetGain.gain.setValueAtTime(config.reverb, ctx.currentTime);
+    dryGain.gain.setValueAtTime(Math.max(0.05, 1.0 - config.reverb * 0.7), ctx.currentTime);
+    eqLow.gain.setValueAtTime(config.low, ctx.currentTime);
+    eqMid.gain.setValueAtTime(config.mid, ctx.currentTime);
+    eqHigh.gain.setValueAtTime(config.high, ctx.currentTime);
+  }
+}
+
+var toastTimer = null;
+function showToast(htmlMsg) {
+  var box = document.getElementById("toastBox");
+  box.innerHTML = htmlMsg;
+  box.classList.add("show");
+  if (toastTimer) clearTimeout(toastTimer);
+  toastTimer = setTimeout(function(){
+    box.classList.remove("show");
+  }, 2400);
+}
+
+/* 启动免责阻断逻辑 */
+document.getElementById("btnDiscAgree").addEventListener("click", function(e){
+  e.preventDefault();
+  e.stopPropagation();
+  ensureCtx();
+  var disc = document.getElementById("disclaimerModal");
+  if (disc) {
+    disc.style.display = "none";
+  }
+});
+
+document.getElementById("btnDiscRefuse").addEventListener("click", function(e){
+  e.preventDefault();
+  e.stopPropagation();
+  if (navigator.app && navigator.app.exitApp) {
+    navigator.app.exitApp();
+  } else if (navigator.device && navigator.device.exitApp) {
+    navigator.device.exitApp();
+  } else {
+    window.close();
+    document.body.innerHTML = "<div style=\"color:#ff5555;font-size:16px;text-align:center;padding:40px;line-height:1.8;font-weight:800\">已拒绝许可协议<br><span style=\"color:#94a3b8;font-size:13px;font-weight:400\">无法进入软件，请直接关闭窗口或划掉 App。</span></div>";
+  }
+});
+
+["click","touchstart","pointerdown"].forEach(function(e){ window.addEventListener(e, ensureCtx, {once:true}); });
+
+function bindHold(id, onDown, onUp){
+  var el = document.getElementById(id);
+  if(!el) return;
+  var isDown = false;
+  el.addEventListener("pointerdown", function(e){
+    e.preventDefault();
+    if (isDown) return;
+    isDown = true;
+    el.classList.add("pressed");
+    onDown();
+  });
+  el.addEventListener("pointerup", function(e){
+    e.preventDefault();
+    if (!isDown) return;
+    isDown = false;
+    el.classList.remove("pressed");
+    onUp();
+  });
+  el.addEventListener("pointerleave", function(e){
+    e.preventDefault();
+    if (!isDown) return;
+    isDown = false;
+    el.classList.remove("pressed");
+    onUp();
+  });
+  el.addEventListener("pointercancel", function(e){
+    e.preventDefault();
+    if (!isDown) return;
+    isDown = false;
+    el.classList.remove("pressed");
+    onUp();
+  });
+}
+
+bindHold("btnHorn", hornPress, resumeMainSirenFromScratch);
+bindHold("btnMic", startMicPA, stopMicPA);
+
+bindHold("btnManualHigh", function(){ manualHighCtrl.press(); }, function(){ manualHighCtrl.release(); });
+bindHold("btnManualLow", function(){ manualLowCtrl.press(); }, function(){ manualLowCtrl.release(); });
+
+document.querySelectorAll("[data-siren]").forEach(function(b){
+  b.addEventListener("click", function(){ playSingle(b.dataset.siren); });
+});
+document.querySelectorAll("[data-dual]").forEach(function(b){
+  b.addEventListener("click", function(){ playDual(b.dataset.dual); });
+});
+
+document.getElementById("btnAutoCycle").addEventListener("click", toggleAutoCycle);
+document.getElementById("btnHowler").addEventListener("click", toggleHowler);
+document.getElementById("btnLowPower").addEventListener("click", toggleLowPower);
+document.getElementById("btnStop").addEventListener("click", stopAll);
+
+document.getElementById("btnLgtAuto").addEventListener("click", function(){ setLightMode("auto"); });
+document.getElementById("btnLgtM1").addEventListener("click", function(){ setLightMode("mode1"); });
+document.getElementById("btnLgtM2").addEventListener("click", function(){ setLightMode("mode2"); });
+document.getElementById("btnLgtM3").addEventListener("click", function(){ setLightMode("mode3"); });
+document.getElementById("btnStopLight").addEventListener("click", toggleStopLight);
+
+document.getElementById("btnSettings").addEventListener("click", openModal);
+document.getElementById("btnCloseModal").addEventListener("click", closeModal);
+document.getElementById("modalOverlay").addEventListener("click", function(e){
+  if (e.target === this) closeModal();
+});
+
+document.getElementById("btnContactAuthor").addEventListener("click", openContactModal);
+document.getElementById("btnCloseContact").addEventListener("click", closeContactModal);
+document.getElementById("contactModal").addEventListener("click", function(e){
+  if (e.target === this) closeContactModal();
+});
+
+document.getElementById("btnCopyDy").addEventListener("click", function(){
+  var douyinId = "wawruanjian";
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(douyinId).then(function(){
+      showToast(i18n[currentLang].toastCopy);
+    }).catch(function(){
+      fallbackCopy(douyinId);
+    });
+  } else {
+    fallbackCopy(douyinId);
+  }
+});
+
+function fallbackCopy(text) {
+  var ta = document.createElement("textarea");
+  ta.value = text;
+  ta.style.position = "fixed";
+  ta.style.opacity = "0";
+  document.body.appendChild(ta);
+  ta.select();
+  try {
+    document.execCommand("copy");
+    showToast(i18n[currentLang].toastCopy);
+  } catch(e) {
+    showToast("抖音号：wawruanjian（请手动复制）");
+  }
+  document.body.removeChild(ta);
+}
+
+document.getElementById("btnPALive").addEventListener("click", function(){
+  paMode = "live";
+  config.paMode = "live";
+  saveConfig();
+  document.getElementById("btnPALive").classList.add("active");
+  document.getElementById("btnPARecord").classList.remove("active");
+  if (!isMicActive) document.getElementById("micSubTxt").innerText = i18n[currentLang].subMicLive;
+});
+document.getElementById("btnPARecord").addEventListener("click", function(){
+  paMode = "record";
+  config.paMode = "record";
+  saveConfig();
+  document.getElementById("btnPARecord").classList.add("active");
+  document.getElementById("btnPALive").classList.remove("active");
+  if (!isMicActive) document.getElementById("micSubTxt").innerText = i18n[currentLang].subMicRec;
+});
+
+document.getElementById("btnLangZh").addEventListener("click", function(){ applyLanguage("zh"); });
+document.getElementById("btnLangEn").addEventListener("click", function(){ applyLanguage("en"); });
+
+document.getElementById("rngReverb").addEventListener("input", function(e){
+  ensureCtx();
+  var v = parseFloat(e.target.value);
+  config.reverb = v;
+  saveConfig();
+  wetGain.gain.setValueAtTime(v, ctx.currentTime);
+  dryGain.gain.setValueAtTime(Math.max(0.05, 1.0 - v * 0.7), ctx.currentTime);
+  document.getElementById("valReverb").innerText = Math.round(v * 100) + "%";
+});
+document.getElementById("rngLow").addEventListener("input", function(e){
+  ensureCtx();
+  var v = parseFloat(e.target.value);
+  config.low = v;
+  saveConfig();
+  eqLow.gain.setValueAtTime(v, ctx.currentTime);
+  document.getElementById("valLow").innerText = (v > 0 ? "+" : "") + v + "dB";
+});
+document.getElementById("rngMid").addEventListener("input", function(e){
+  ensureCtx();
+  var v = parseFloat(e.target.value);
+  config.mid = v;
+  saveConfig();
+  eqMid.gain.setValueAtTime(v, ctx.currentTime);
+  document.getElementById("valMid").innerText = (v > 0 ? "+" : "") + v + "dB";
+});
+document.getElementById("rngHigh").addEventListener("input", function(e){
+  ensureCtx();
+  var v = parseFloat(e.target.value);
+  config.high = v;
+  saveConfig();
+  eqHigh.gain.setValueAtTime(v, ctx.currentTime);
+  document.getElementById("valHigh").innerText = (v > 0 ? "+" : "") + v + "dB";
+});
+
+document.getElementById("btnResetDefaults").addEventListener("click", function(){
+  ensureCtx();
+  config = Object.assign({}, DEFAULT_CONFIG);
+  saveConfig();
+  applyLanguage(config.lang);
+  syncUIFromConfig();
+});
+
+/* =========================================================================
+   直接使用桌面原版高清大图（100% 真实纯离线、零外部 API、绝不跳转）
+   ========================================================================= */
+var WX_REAL_IMG = "data:image/jpeg;base64,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";
+var ALI_REAL_IMG = "data:image/jpeg;base64,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";
+var currentPayType = "wx";
+
+function renderCurrentPay() {
+  var img = document.getElementById("qrImgDisplay");
+  img.src = (currentPayType === "wx") ? WX_REAL_IMG : ALI_REAL_IMG;
+}
+
+document.getElementById("btnGoInspire").addEventListener("click", function(){
+  document.getElementById("contactMainPanel").style.display = "none";
+  document.getElementById("contactPayPanel").style.display = "block";
+  renderCurrentPay();
+});
+
+document.getElementById("btnBackContact").addEventListener("click", function(){
+  document.getElementById("contactPayPanel").style.display = "none";
+  document.getElementById("contactMainPanel").style.display = "block";
+});
+
+document.getElementById("tabWx").addEventListener("click", function(){
+  currentPayType = "wx";
+  document.getElementById("tabWx").className = "btn-pay-tab active wx";
+  document.getElementById("tabAli").className = "btn-pay-tab ali";
+  renderCurrentPay();
+});
+
+document.getElementById("tabAli").addEventListener("click", function(){
+  currentPayType = "ali";
+  document.getElementById("tabAli").className = "btn-pay-tab active ali";
+  document.getElementById("tabWx").className = "btn-pay-tab wx";
+  renderCurrentPay();
+});
+
+// 点击二维码：生成纯白底，顶部绘制“微信激励专用”/“支付宝激励专用”，绘制原图并下载保存到本地相册
+document.getElementById("qrContainer").addEventListener("click", function(){
+  var rawImg = document.getElementById("qrImgDisplay");
+  var outCvs = document.createElement("canvas");
+  
+  var imgW = rawImg.naturalWidth || 400;
+  var imgH = rawImg.naturalHeight || 500;
+  var pad = 24;
+  
+  outCvs.width = imgW + pad * 2;
+  outCvs.height = imgH + pad * 2 + 70;
+  var ctx2d = outCvs.getContext("2d");
+
+  // 1. 白底
+  ctx2d.fillStyle = "#ffffff";
+  ctx2d.fillRect(0, 0, outCvs.width, outCvs.height);
+
+  // 2. 居中大标题
+  ctx2d.fillStyle = "#000000";
+  var fontSize = Math.max(24, Math.round(outCvs.width / 16));
+  ctx2d.font = "bold " + fontSize + "px -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif";
+  ctx2d.textAlign = "center";
+  var titleText = (currentPayType === "wx") ? "微信激励专用" : "支付宝激励专用";
+  ctx2d.fillText(titleText, outCvs.width / 2, 54);
+
+  // 3. 绘制真实完整原图
+  ctx2d.drawImage(rawImg, pad, 74, imgW, imgH);
+
+  // 4. 纯本地下载触发（绝不跳转任何网址）
+  var dlUrl = outCvs.toDataURL("image/png");
+  var a = document.createElement("a");
+  a.href = dlUrl;
+  a.download = (currentPayType === "wx") ? "wechat_inspire.png" : "alipay_inspire.png";
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+
+  showToast((currentPayType === "wx") ? i18n[currentLang].savedWx : i18n[currentLang].savedAli);
+});
+
+window.addEventListener("blur", function(){ if(!isHowlerArmed && !isMicActive && !isStopLightActive) stopAll(); });
+document.addEventListener("visibilitychange", function(){ if(document.hidden && !isHowlerArmed && !isMicActive && !isStopLightActive) stopAll(); });
+
+applyLanguage(config.lang);
+syncUIFromConfig();
+
+})();
+</script>
+</body>
+</html>
